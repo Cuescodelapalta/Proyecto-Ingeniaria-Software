@@ -39,8 +39,8 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
-/coverage/
+**/build/
+**/coverage/
 
 # Local environment and credentials
 .env
