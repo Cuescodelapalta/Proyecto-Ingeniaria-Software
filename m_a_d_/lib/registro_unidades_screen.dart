@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 
 class RegistroUnidadesScreen extends StatefulWidget {
   const RegistroUnidadesScreen({super.key});
@@ -25,10 +26,46 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
 
   void _validarFormulario() {
     if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El formulario es válido.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('El formulario es válido.')));
     }
+  }
+
+  String? _validarRut(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Completa este campo';
+    }
+
+    final rut = value.toUpperCase();
+    final formatoValido = RegExp(r'^\d{1,8}[0-9K]$').hasMatch(rut);
+    if (!formatoValido) {
+      return 'Ingresa el RUT sin puntos ni guion (ej. 123456785)';
+    }
+
+    final cuerpo = rut.substring(0, rut.length - 1);
+    if (cuerpo.startsWith('0')) {
+      return 'Ingresa un RUT válido (ej. 123456785)';
+    }
+
+    var suma = 0;
+    var multiplicador = 2;
+    for (var i = cuerpo.length - 1; i >= 0; i--) {
+      suma += int.parse(cuerpo[i]) * multiplicador;
+      multiplicador = multiplicador == 7 ? 2 : multiplicador + 1;
+    }
+
+    final resto = 11 - (suma % 11);
+    final digitoVerificador = switch (resto) {
+      11 => '0',
+      10 => 'K',
+      _ => resto.toString(),
+    };
+
+    if (rut[rut.length - 1] != digitoVerificador) {
+      return 'El dígito verificador del RUT no es válido';
+    }
+    return null;
   }
 
   @override
@@ -42,16 +79,17 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
           children: [
             TextFormField(
               controller: _datoController,
+              keyboardType: TextInputType.text,
+              textCapitalization: TextCapitalization.characters,
+              maxLength: 9,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9kK]')),
+              ],
               decoration: const InputDecoration(
-                labelText: 'Dato de ejemplo',
+                labelText: 'RUT',
                 border: OutlineInputBorder(),
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Completa este campo';
-                }
-                return null;
-              },
+              validator: _validarRut,
             ),
             SizedBox(height: 16),
             TextFormField(
@@ -70,16 +108,17 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
                 );
 
                 if (fecha != null) {
-                  setState((){
+                  setState(() {
                     _fechaSeleccionada = fecha;
-                    _fechaController.text = 
-                      '${fecha.day.toString().padLeft(2, '0')}/'
-                      '${fecha.month.toString().padLeft(2, '0')}/'
-                      '${fecha.year}';
+                    _fechaController.text =
+                        '${fecha.day.toString().padLeft(2, '0')}/'
+                        '${fecha.month.toString().padLeft(2, '0')}/'
+                        '${fecha.year}';
                   });
                 }
               },
-              validator: (_) => _fechaSeleccionada == null ? 'Selecciona una fecha' : null, 
+              validator: (_) =>
+                  _fechaSeleccionada == null ? 'Selecciona una fecha' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -97,9 +136,8 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
                   initialEntryMode: TimePickerEntryMode.inputOnly,
                   builder: (context, child) {
                     return MediaQuery(
-                      data: MediaQuery.of(context).copyWith(
-                        alwaysUse24HourFormat: true,
-                      ),
+                      data: MediaQuery.of(context)
+                          .copyWith(alwaysUse24HourFormat: true),
                       child: child!,
                     );
                   },
