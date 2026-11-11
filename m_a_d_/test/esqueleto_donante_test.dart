@@ -35,4 +35,19 @@ void main() {
     expect(datos, isNotEmpty);
     expect(datos.last['rut'], equals('1-9'));
   });
+
+  test('Task02: Debe acumular registros al guardar mas de una vez', () async {
+  // Ejecutamos el guardado dos veces seguidas
+  await DonanteRepository.guardarDonanteEsqueleto();
+  await DonanteRepository.guardarDonanteEsqueleto();
+
+  final file = File('donantes.json');
+  final String contenido = await file.readAsString();
+  final List<dynamic> datos = jsonDecode(contenido);
+
+  // Verifica que la lista ahora tenga 2 elementos cargados
+  expect(datos.length, equals(2));
+  expect(datos[0]['rut'], equals('1-9'));
+  expect(datos[1]['rut'], equals('1-9'));
+});
 }
