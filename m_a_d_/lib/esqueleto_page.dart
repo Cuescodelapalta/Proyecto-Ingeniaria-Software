@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../repositories/donante_repository.dart';
+import 'package:m_a_d_/repositories/donante_repository.dart';
 
 class EsqueletoPage extends StatelessWidget {
   const EsqueletoPage({super.key});
