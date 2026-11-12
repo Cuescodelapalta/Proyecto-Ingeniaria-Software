@@ -28,6 +28,7 @@ void main() {
         tipoSangre: 'O-',
         fechaExtraccion: fechaExtraccion,
         volumen: 450,
+        sede: 'Sede Concepción Central',
       );
 
       expect(guardadoExitoso, isTrue);
@@ -42,27 +43,32 @@ void main() {
       expect(unidad['fecha_extraccion'], '2026-11-01');
       expect(unidad['fecha_caducidad'], '2026-12-13');
       expect(unidad['volumen'], 450);
+      expect(unidad['sede'], 'Sede Concepción Central'); // verificación de sede
     });
 
-    test('Incrementa el id entero y mantiene unidades previas', () async {
+    test('Incrementa el id entero, mantiene unidades previas y registra sedes', () async {
       await UnidadRepository.guardarUnidad(
         tipoSangre: 'A+',
         fechaExtraccion: DateTime(2026, 10, 10),
         volumen: 450,
+        sede: 'Sede Talcahuano',
       );
 
       await UnidadRepository.guardarUnidad(
         tipoSangre: 'B+',
         fechaExtraccion: DateTime(2026, 10, 15),
         volumen: 400,
+        sede: 'Sede Chillán',
       );
 
       final List<dynamic> unidades = jsonDecode(await File(testFilePath).readAsString());
       expect(unidades.length, 2);
       expect(unidades[0]['id'], 1);
+      expect(unidades[0]['sede'], 'Sede Talcahuano');
       expect(unidades[1]['id'], 2);
       expect(unidades[1]['fecha_caducidad'], '2026-11-26');
       expect(unidades[1]['estado'], 'Disponible');
+      expect(unidades[1]['sede'], 'Sede Chillán');
     });
   });
 }

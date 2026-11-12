@@ -11,6 +11,7 @@ class ValidadorDonacion {
     required String rutDonante,
     required DateTime fechaExtraccion,
     required int volumen,
+    required String sede,
   }) async {
     try {
       final fileDonantes = File(_pathDonantes);
@@ -56,6 +57,7 @@ class ValidadorDonacion {
         tipoSangre: tipoSangreHeredado,
         fechaExtraccion: fechaExtraccion,
         volumen: volumen,
+        sede: sede,
       );
 
       if (!guardadoExitoso) {

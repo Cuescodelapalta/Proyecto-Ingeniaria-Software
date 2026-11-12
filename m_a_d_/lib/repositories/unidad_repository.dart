@@ -8,6 +8,7 @@ class UnidadRepository {
     required String tipoSangre,
     required DateTime fechaExtraccion,
     required int volumen,
+    required String sede,
   }) async {
     try {
       final file = File(_filePath);
@@ -33,6 +34,7 @@ class UnidadRepository {
         'fecha_caducidad': fechaCaducidad.toIso8601String().split('T').first,
         'fecha_extraccion': fechaExtraccion.toIso8601String().split('T').first,
         'volumen': volumen,
+        'sede': sede,
       };
 
       listaUnidades.add(nuevaUnidad);

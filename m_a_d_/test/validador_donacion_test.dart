@@ -27,12 +27,13 @@ void main() {
     }
   });
 
-  group('ValidadorDonacion - Task 05 (Elegibilidad y Herencia)', () {
+  group('ValidadorDonacion - Task 05 (Elegibilidad, Herencia y Sede)', () {
     test('Falla si no existe el archivo donantes.json', () async {
       final resultado = await ValidadorDonacion.procesarYGuardarUnidad(
         rutDonante: '1-9',
         fechaExtraccion: DateTime(2026, 11, 12),
         volumen: 450,
+        sede: 'Sede Central',
       );
 
       expect(resultado['exito'], isFalse);
@@ -48,6 +49,7 @@ void main() {
         rutDonante: '1-9', // RUT que no existe
         fechaExtraccion: DateTime(2026, 11, 12),
         volumen: 450,
+        sede: 'Sede Central',
       );
 
       expect(resultado['exito'], isFalse);
@@ -63,13 +65,14 @@ void main() {
         rutDonante: '1-9',
         fechaExtraccion: DateTime(2026, 11, 12),
         volumen: 450,
+        sede: 'Sede Central',
       );
 
       expect(resultado['exito'], isFalse);
       expect(resultado['mensaje'], contains('no cumple con la elegibilidad'));
     });
 
-    test('Éxito: Valida donante Apto, hereda tipo de sangre y guarda la unidad', () async {
+    test('Éxito: Valida donante Apto, hereda tipo de sangre y guarda la unidad con sede', () async {
       await File(testFileDonantes).writeAsString(jsonEncode([
         {'rut': '1-9', 'elegibilidad': 'Apto', 'tipoSangre': 'B+'}
       ]));
@@ -78,18 +81,20 @@ void main() {
         rutDonante: '1-9',
         fechaExtraccion: DateTime(2026, 11, 12),
         volumen: 450,
+        sede: 'Sede Concepción Centro',
       );
 
       expect(resultado['exito'], isTrue);
       expect(resultado['mensaje'], contains('Tipo de sangre heredado: B+'));
 
-      // Verificar que se creó el archivo de unidades y heredó correctamente los datos
+      // Verificar que se creó el archivo de unidades y guardó todos los datos correctos
       final fileUnidades = File(testFileUnidades);
       expect(await fileUnidades.exists(), isTrue);
 
       final List<dynamic> unidades = jsonDecode(await fileUnidades.readAsString());
       expect(unidades.length, 1);
       expect(unidades.first['tipo_sangre'], 'B+');
+      expect(unidades.first['sede'], 'Sede Concepción Centro');
       expect(unidades.first['estado'], 'Disponible');
       expect(unidades.first['volumen'], 450);
     });
