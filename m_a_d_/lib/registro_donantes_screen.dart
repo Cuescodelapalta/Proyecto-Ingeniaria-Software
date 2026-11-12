@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+/// Pantalla para el registro de información de donantes
+/// Captura los datos ingresados mediante un formulario interactivo.
 class RegistroDonanteScreen extends StatefulWidget {
   const RegistroDonanteScreen({super.key});
 
@@ -9,14 +11,17 @@ class RegistroDonanteScreen extends StatefulWidget {
 }
 
 class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
+  // Llave global que identifica el formulario y permite ejecutar las validaciones
   final _formKey = GlobalKey<FormState>();
 
+  // Controladores para capturar y leer el texto ingresado en cada campo.
   final _controladorRut = TextEditingController();
   final _controladorNombre = TextEditingController();
   final _controladorFechaNacimiento = TextEditingController();
   final _controladorPeso = TextEditingController();
   final _controladorTelefono = TextEditingController();
 
+  /// Almacena el valor actual en el menú desplegable.
   String? _tipoSangreSeleccionado;
 
   final List<String> _tiposSangre = [
@@ -30,6 +35,7 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
     'O-',
   ];
 
+  /// Libera los recursos de memoria al cerrar la ventana, para evitar fugas de memoria.
   @override
   void dispose() {
     _controladorRut.dispose();
@@ -107,6 +113,7 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
                 tipoTeclado: TextInputType.phone,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
+                  // Restringe la entrada a solo 11 digitos númericos
                   LengthLimitingTextInputFormatter(11),
                 ],
               ),
@@ -132,6 +139,12 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
     );
   }
 
+  /// Construye una celda de texto reutilizable para las distintas opciones.
+  /// [controlador] administra el texto ingresado.
+  /// [etiqueta] define el texto flotante de ayuda visual.
+  /// [tipoTeclado] adapta el teclado del dispositivo.
+  /// [validador] recibe una función para evaluar que no existan campos vacíos.
+  /// [inputFormatters] permite restringir los caracteres que se pueden ingresar.
   Widget _construirCampoTexto({
     required TextEditingController controlador,
     required String etiqueta,
