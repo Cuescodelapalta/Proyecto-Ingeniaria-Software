@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class RegistroDonanteScreen extends StatefulWidget {
   const RegistroDonanteScreen({super.key});
@@ -8,7 +9,7 @@ class RegistroDonanteScreen extends StatefulWidget {
 }
 
 class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
-  final _Key = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
 
   final _controladorRut = TextEditingController();
   final _controladorNombre = TextEditingController();
@@ -50,7 +51,7 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
-          key: _Key,
+          key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -104,21 +105,22 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
                 controlador: _controladorTelefono,
                 etiqueta: 'Teléfono',
                 tipoTeclado: TextInputType.phone,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(11),
+                ],
               ),
               const SizedBox(height: 32),
 
               ElevatedButton(
                 onPressed: () {
-                  if (_Key.currentState!.validate()) {
-                    final datosDonante = {
-                      'rut': _controladorRut.text,
-                      'nombre': _controladorNombre.text,
-                      'fecha_nacimiento': _controladorFechaNacimiento.text,
-                      'peso': _controladorPeso.text,
-                      'tipo_sangre':
-                          _tipoSangreSeleccionado ?? 'No especificado',
-                      'telefono': _controladorTelefono.text,
-                    };
+                  if (_formKey.currentState!.validate()) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Información guardada'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
                   }
                 },
                 child: const Text('Guardar'),
@@ -135,10 +137,12 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
     required String etiqueta,
     TextInputType tipoTeclado = TextInputType.text,
     FormFieldValidator<String>? validador,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return TextFormField(
       controller: controlador,
       keyboardType: tipoTeclado,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         labelText: etiqueta,
         border: const OutlineInputBorder(),
