@@ -39,7 +39,8 @@ class DonanteRepository {
   }
 
   /// Deja el RUT en formato comparable, sin puntos ni guion y en mayúscula
-  static String normalizarRut(String rut) => rut.trim().replaceAll(RegExp(r'[.-]'), '').toUpperCase();
+  static String normalizarRut(String rut) =>
+      rut.trim().replaceAll(RegExp(r'[.-]'), '').toUpperCase();
 
   /// Lee donantes.json. Si no existe o está vacío, devuelve una lista vacía.
   static Future<List<dynamic>> _leerDonantes() async {
@@ -60,7 +61,10 @@ class DonanteRepository {
 
   static bool _contieneRut(List<dynamic> donantes, String rut) {
     final buscado = normalizarRut(rut);
-    return donantes.any((d) => d is Map && d['rut'] is String && normalizarRut(d['rut'] as String) == buscado);
+    return donantes.any((d) =>
+        d is Map &&
+        d['rut'] is String &&
+        normalizarRut(d['rut'] as String) == buscado);
   }
 
   /// true si el RUT ya está registrado en donantes.json.
@@ -69,7 +73,8 @@ class DonanteRepository {
   }
 
   /// Guarda un donante solo si su RUT no existe ya en donantes.json
-  static Future<Map<String, Object>> guardarDonante(Map<String, dynamic> donante) async {
+  static Future<Map<String, Object>> guardarDonante(
+      Map<String, dynamic> donante) async {
     try {
       final rut = donante['rut'];
       if (rut is! String || rut.trim().isEmpty) {
@@ -89,10 +94,18 @@ class DonanteRepository {
       await File(_filePath).writeAsString(
         const JsonEncoder.withIndent('  ').convert(donantes),
       );
-      
+
       return {'exito': true, 'mensaje': 'Donante registrado correctamente.'};
     } catch (e) {
       return {'exito': false, 'mensaje': 'Error al guardar el donante: $e'};
     }
+  }
+
+  /// Método de compatibilidad para la UI (RegistroDonanteScreen) que retorna booleano,
+  /// integrando la validación estricta de RUT duplicado.
+  static Future<bool> guardarDonanteReal(
+      Map<String, dynamic> donanteData) async {
+    final resultado = await guardarDonante(donanteData);
+    return resultado['exito'] == true;
   }
 }
