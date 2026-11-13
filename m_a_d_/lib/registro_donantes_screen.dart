@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:m_a_d_/repositories/donante_repository.dart';
 
 /// Pantalla para el registro de información de donantes
 /// Captura los datos ingresados mediante un formulario interactivo.
@@ -120,14 +121,41 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
               const SizedBox(height: 32),
 
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Información guardada'),
-                        backgroundColor: Colors.green,
-                      ),
+                    final nuevoDonante = {
+                      'rut': _controladorRut.text.trim(),
+                      'nombre': _controladorNombre.text.trim(),
+                      'fechaNacimiento': _controladorFechaNacimiento.text
+                          .trim(),
+                      'peso':
+                          double.tryParse(_controladorPeso.text.trim()) ?? 0.0,
+                      'tipoSangre': _tipoSangreSeleccionado,
+                      'telefono':
+                          int.tryParse(_controladorTelefono.text.trim()) ?? 0,
+                      'elegibilidad': 'Pendiente', //Reemplazar esto para task 4
+                      'fechaRetorno': null,
+                    };
+                    bool exito = await DonanteRepository.guardarDonanteReal(
+                      nuevoDonante,
                     );
+                    if (exito && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Información del donante guardada exitosamente',
+                          ),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                      _formKey.currentState!.reset();
+                      _controladorRut.clear();
+                      _controladorNombre.clear();
+                      _controladorFechaNacimiento.clear();
+                      _controladorPeso.clear();
+                      _controladorTelefono.clear();
+                      setState(() => _tipoSangreSeleccionado = null);
+                    }
                   }
                 },
                 child: const Text('Guardar'),
