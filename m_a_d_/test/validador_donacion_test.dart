@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m_a_d_/validador_donacion.dart';
 
@@ -37,13 +38,18 @@ void main() {
       );
 
       expect(resultado['exito'], isFalse);
-      expect(resultado['mensaje'], contains('No se encontró el archivo de donantes'));
+      expect(
+        resultado['mensaje'],
+        contains('No se encontró el archivo de donantes'),
+      );
     });
 
     test('Falla si el RUT ingresado no está registrado', () async {
-      await File(testFileDonantes).writeAsString(jsonEncode([
-        {'rut': '9-9', 'elegibilidad': 'Apto', 'tipoSangre': 'A+'}
-      ]));
+      await File(testFileDonantes).writeAsString(
+        jsonEncode([
+          {'rut': '9-9', 'elegibilidad': 'Apto', 'tipoSangre': 'A+'},
+        ]),
+      );
 
       final resultado = await ValidadorDonacion.procesarYGuardarUnidad(
         rutDonante: '1-9', // RUT que no existe
@@ -56,29 +62,36 @@ void main() {
       expect(resultado['mensaje'], contains('no está registrado'));
     });
 
-    test('Falla si el donante no cumple con la elegibilidad (no es Apto)', () async {
-      await File(testFileDonantes).writeAsString(jsonEncode([
-        {'rut': '1-9', 'elegibilidad': 'Rechazado', 'tipoSangre': 'O-'}
-      ]));
+    test(
+      'Falla si el donante no cumple con la elegibilidad (no es Apto)',
+      () async {
+        await File(testFileDonantes).writeAsString(
+          jsonEncode([
+            {'rut': '1-9', 'elegibilidad': 'Rechazado', 'tipoSangre': 'O-'},
+          ]),
+        );
 
-      final resultado = await ValidadorDonacion.procesarYGuardarUnidad(
-        rutDonante: '1-9',
-        fechaExtraccion: DateTime(2026, 11, 12),
-        volumen: 450,
-        sede: 'Sede Central',
-      );
+        final resultado = await ValidadorDonacion.procesarYGuardarUnidad(
+          rutDonante: '1-9',
+          fechaExtraccion: DateTime(2026, 11, 12),
+          volumen: 450,
+          sede: 'Sede Central',
+        );
 
-      expect(resultado['exito'], isFalse);
-      expect(resultado['mensaje'], contains('no cumple con la elegibilidad'));
-    });
+        expect(resultado['exito'], isFalse);
+        expect(resultado['mensaje'], contains('no cumple con la elegibilidad'));
+      },
+    );
 
     test('Éxito: Valida donante Apto, hereda tipo de sangre y guarda la unidad con sede', () async {
-      await File(testFileDonantes).writeAsString(jsonEncode([
-        {'rut': '1-9', 'elegibilidad': 'Apto', 'tipoSangre': 'B+'}
-      ]));
+      await File(testFileDonantes).writeAsString(
+        jsonEncode([
+          {'rut': '12.345.678-5', 'elegibilidad': 'Apto', 'tipoSangre': 'B+'},
+        ]),
+      );
 
       final resultado = await ValidadorDonacion.procesarYGuardarUnidad(
-        rutDonante: '1-9',
+        rutDonante: '123456785',
         fechaExtraccion: DateTime(2026, 11, 12),
         volumen: 450,
         sede: 'Sede Concepción Centro',
@@ -91,8 +104,11 @@ void main() {
       final fileUnidades = File(testFileUnidades);
       expect(await fileUnidades.exists(), isTrue);
 
-      final List<dynamic> unidades = jsonDecode(await fileUnidades.readAsString());
+      final List<dynamic> unidades = jsonDecode(
+        await fileUnidades.readAsString(),
+      );
       expect(unidades.length, 1);
+      expect(unidades.first['rut_donante'], '123456785');
       expect(unidades.first['tipo_sangre'], 'B+');
       expect(unidades.first['sede'], 'Sede Concepción Centro');
       expect(unidades.first['estado'], 'Disponible');

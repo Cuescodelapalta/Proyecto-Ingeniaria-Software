@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
+import 'package:m_a_d_/validador_donacion.dart';
 
 class RegistroUnidadesScreen extends StatefulWidget {
   const RegistroUnidadesScreen({super.key});
@@ -12,28 +13,40 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
   final _formKey = GlobalKey<FormState>();
   final _datoController = TextEditingController();
   final _fechaController = TextEditingController();
-  final _horaController = TextEditingController();
   final _descripcionController = TextEditingController();
   final _cantidadDonadaController = TextEditingController();
   DateTime? _fechaSeleccionada;
-  TimeOfDay? _horaSeleccionada;
+  bool _guardando = false;
 
   @override
   void dispose() {
     _datoController.dispose();
     _fechaController.dispose();
-    _horaController.dispose();
     _descripcionController.dispose();
     _cantidadDonadaController.dispose();
     super.dispose();
   }
 
-  void _validarFormulario() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('El formulario es válido.')));
-    }
+  Future<void> _guardarFormulario() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _guardando = true);
+    final resultado = await ValidadorDonacion.procesarYGuardarUnidad(
+      rutDonante: _datoController.text,
+      fechaExtraccion: _fechaSeleccionada!,
+      volumen: int.parse(_cantidadDonadaController.text),
+      sede: _descripcionController.text.trim(),
+    );
+    if (!mounted) return;
+
+    setState(() => _guardando = false);
+    final exito = resultado['exito'] == true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(resultado['mensaje'] as String),
+        backgroundColor: exito ? Colors.green : Colors.red,
+      ),
+    );
   }
 
   String? _validarRut(String? value) {
@@ -134,41 +147,6 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
             ),
             const SizedBox(height: 16),
             TextFormField(
-              controller: _horaController,
-              readOnly: true,
-              decoration: const InputDecoration(
-                labelText: 'Hora de extracción',
-                border: OutlineInputBorder(),
-                suffixIcon: Icon(Icons.access_time),
-              ),
-              onTap: () async {
-                final hora = await showTimePicker(
-                  context: context,
-                  initialTime: _horaSeleccionada ?? TimeOfDay.now(),
-                  initialEntryMode: TimePickerEntryMode.inputOnly,
-                  builder: (context, child) {
-                    return MediaQuery(
-                      data: MediaQuery.of(context)
-                          .copyWith(alwaysUse24HourFormat: true),
-                      child: child!,
-                    );
-                  },
-                );
-
-                if (hora != null) {
-                  setState(() {
-                    _horaSeleccionada = hora;
-                    _horaController.text =
-                        '${hora.hour.toString().padLeft(2, '0')}:'
-                        '${hora.minute.toString().padLeft(2, '0')}';
-                  });
-                }
-              },
-              validator: (_) =>
-                  _horaSeleccionada == null ? 'Selecciona una hora' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
               controller: _descripcionController,
               keyboardType: TextInputType.text,
               decoration: const InputDecoration(
@@ -192,8 +170,14 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
             ),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: _validarFormulario,
-              child: const Text('Validar formulario'),
+              onPressed: _guardando ? null : _guardarFormulario,
+              child: _guardando
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Guardar unidad'),
             ),
           ],
         ),
