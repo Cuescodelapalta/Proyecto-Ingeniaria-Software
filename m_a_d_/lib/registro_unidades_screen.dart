@@ -1,0 +1,211 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show FilteringTextInputFormatter;
+import 'package:m_a_d_/validador_donacion.dart';
+
+/// Formulario para registrar una unidad de sangre.
+class RegistroUnidadesScreen extends StatefulWidget {
+  const RegistroUnidadesScreen({super.key});
+
+  @override
+  State<RegistroUnidadesScreen> createState() => _RegistroUnidadesScreenState();
+}
+
+class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
+  final _formKey = GlobalKey<FormState>();
+  // Controladores para leer y limpiar los valores ingresados.
+  final _datoController = TextEditingController();
+  final _fechaController = TextEditingController();
+  final _descripcionController = TextEditingController();
+  final _cantidadDonadaController = TextEditingController();
+  DateTime? _fechaSeleccionada;
+  // Evita envíos duplicados mientras se guarda el registro.
+  bool _guardando = false;
+
+  @override
+  void dispose() {
+    // Libera los controladores cuando se cierra la pantalla.
+    _datoController.dispose();
+    _fechaController.dispose();
+    _descripcionController.dispose();
+    _cantidadDonadaController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _guardarFormulario() async {
+    // No inicia el guardado si algún campo tiene errores.
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _guardando = true);
+    // El validador verifica el donante y delega el guardado al repositorio.
+    final resultado = await ValidadorDonacion.procesarYGuardarUnidad(
+      rutDonante: _datoController.text,
+      fechaExtraccion: _fechaSeleccionada!,
+      volumen: int.parse(_cantidadDonadaController.text),
+      sede: _descripcionController.text.trim(),
+    );
+    // La pantalla podría haberse cerrado durante la operación asíncrona.
+    if (!mounted) return;
+
+    setState(() => _guardando = false);
+    final exito = resultado['exito'] == true;
+    if (exito) {
+      // Solo limpia el formulario si el registro se guardó correctamente.
+      _fechaSeleccionada = null;
+      _datoController.clear();
+      _fechaController.clear();
+      _descripcionController.clear();
+      _cantidadDonadaController.clear();
+      _formKey.currentState!.reset();
+    }
+
+    // Informa si el guardado terminó correctamente o devolvió un error.
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(resultado['mensaje'] as String),
+        backgroundColor: exito ? Colors.green : Colors.red,
+      ),
+    );
+  }
+
+  /// Comprueba el formato y el dígito verificador chileno del RUT.
+  String? _validarRut(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Completa este campo';
+    }
+
+    final rut = value.toUpperCase();
+    final formatoValido = RegExp(r'^\d{1,8}[0-9K]$').hasMatch(rut);
+    if (!formatoValido) {
+      return 'Ingresa el RUT sin puntos ni guion (ej. 123456785)';
+    }
+
+    final cuerpo = rut.substring(0, rut.length - 1);
+    if (cuerpo.startsWith('0')) {
+      return 'Ingresa un RUT válido (ej. 123456785)';
+    }
+
+    var suma = 0;
+    var multiplicador = 2;
+    // Calcula la suma ponderada usada por el algoritmo módulo 11.
+    for (var i = cuerpo.length - 1; i >= 0; i--) {
+      suma += int.parse(cuerpo[i]) * multiplicador;
+      multiplicador = multiplicador == 7 ? 2 : multiplicador + 1;
+    }
+
+    final resto = 11 - (suma % 11);
+    final digitoVerificador = switch (resto) {
+      11 => '0',
+      10 => 'K',
+      _ => resto.toString(),
+    };
+
+    if (rut[rut.length - 1] != digitoVerificador) {
+      return 'El dígito verificador del RUT no es válido';
+    }
+    return null;
+  }
+
+  /// Acepta solo cantidades enteras de mililitros mayores que cero.
+  String? _validarCantidadDonada(String? value) {
+    final cantidad = int.tryParse(value ?? '');
+    if (cantidad == null || cantidad <= 0) {
+      return 'Ingresa una cantidad mayor que 0';
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Registro de unidades')),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // RUT del donante que se asociará a la unidad.
+            TextFormField(
+              controller: _datoController,
+              keyboardType: TextInputType.text,
+              textCapitalization: TextCapitalization.characters,
+              maxLength: 9,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9kK]')),
+              ],
+              decoration: const InputDecoration(
+                labelText: 'RUT',
+                border: OutlineInputBorder(),
+              ),
+              validator: _validarRut,
+            ),
+            SizedBox(height: 16),
+            // La fecha se elige con el selector y se muestra en formato dd/mm/aaaa.
+            TextFormField(
+              controller: _fechaController,
+              readOnly: true,
+              decoration: const InputDecoration(
+                labelText: 'Fecha de extracción',
+                border: OutlineInputBorder(),
+              ),
+              onTap: () async {
+                final fecha = await showDatePicker(
+                  context: context,
+                  initialDate: _fechaSeleccionada ?? DateTime.now(),
+                  firstDate: DateTime(2026),
+                  lastDate: DateTime(2100),
+                );
+
+                if (fecha != null) {
+                  setState(() {
+                    _fechaSeleccionada = fecha;
+                    _fechaController.text =
+                        '${fecha.day.toString().padLeft(2, '0')}/'
+                        '${fecha.month.toString().padLeft(2, '0')}/'
+                        '${fecha.year}';
+                  });
+                }
+              },
+              validator: (_) =>
+                  _fechaSeleccionada == null ? 'Selecciona una fecha' : null,
+            ),
+            const SizedBox(height: 16),
+            // Datos de la sede y el volumen donado.
+            TextFormField(
+              controller: _descripcionController,
+              keyboardType: TextInputType.text,
+              decoration: const InputDecoration(
+                labelText: 'Sede',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? 'Ingresé la sede de donación'
+                  : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _cantidadDonadaController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(
+                labelText: 'Cantidad donada (ml)',
+                border: OutlineInputBorder(),
+              ),
+              validator: _validarCantidadDonada,
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: _guardando ? null : _guardarFormulario,
+              child: _guardando
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Guardar unidad'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

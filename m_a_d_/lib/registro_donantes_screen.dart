@@ -86,7 +86,7 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
               const SizedBox(height: 16),
               _construirCampoTexto(
                 controlador: _controladorPeso,
-                etiqueta: 'Peso',
+                etiqueta: 'Peso (kg)',
                 tipoTeclado: TextInputType.number,
               ),
               const SizedBox(height: 16),

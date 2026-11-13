@@ -1,18 +1,12 @@
 import 'package:flutter/material.dart';
 import 'registro_donantes_screen.dart';
+import 'package:m_a_d_/home_screen.dart';
 
 void main() {
-  runApp(const MainApp());
-}
+  runApp(const MaterialApp(
+    title: 'M.A.D',
+    debugShowCheckedModeBanner: false,
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: RegistroDonanteScreen(),
-    );
-  }
+    home: HomeScreen(),
+  ));
 }

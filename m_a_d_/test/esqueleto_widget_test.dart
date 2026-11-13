@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m_a_d_/esqueleto_page.dart';
+import 'package:m_a_d_/pages/esqueleto_page.dart';
 
 void main() {
   testWidgets('Task02 (T01): El boton de esqueleto activa el SnackBar de exito', (WidgetTester tester) async {
