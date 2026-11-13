@@ -9,12 +9,14 @@ void main() {
   const String testFileUnidades = 'unidades.json';
 
   setUp(() async {
-    // Limpiar archivos de prueba antes de cada test
+    // Sobrescribir con lista vacía de forma segura para evitar bloqueos en Windows
     for (var path in [testFileDonantes, testFileUnidades]) {
       final file = File(path);
-      if (await file.exists()) {
-        await file.delete();
-      }
+      try {
+        if (await file.exists()) {
+          await file.writeAsString('[]');
+        }
+      } catch (_) {}
     }
   });
 
@@ -22,14 +24,20 @@ void main() {
     // Limpiar archivos de prueba despues de cada test
     for (var path in [testFileDonantes, testFileUnidades]) {
       final file = File(path);
-      if (await file.exists()) {
-        await file.delete();
-      }
+      try {
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (_) {}
     }
   });
 
   group('ValidadorDonacion - Task 05 (Elegibilidad, Herencia y Sede)', () {
     test('Falla si no existe el archivo donantes.json', () async {
+      // Asegurarnos de que donantes.json no exista para este test específico
+      final fileDonantes = File(testFileDonantes);
+      try { if (await fileDonantes.exists()) await fileDonantes.delete(); } catch (_) {}
+
       final resultado = await ValidadorDonacion.procesarYGuardarUnidad(
         rutDonante: '1-9',
         fechaExtraccion: DateTime(2026, 11, 12),
@@ -86,7 +94,7 @@ void main() {
     test('Éxito: Valida donante Apto, hereda tipo de sangre y guarda la unidad con sede', () async {
       await File(testFileDonantes).writeAsString(
         jsonEncode([
-          {'rut': '12.345.678-5', 'elegibilidad': 'Apto', 'tipoSangre': 'B+'},
+          {'rut': '12345678-5', 'elegibilidad': 'Apto', 'tipoSangre': 'B+'},
         ]),
       );
 

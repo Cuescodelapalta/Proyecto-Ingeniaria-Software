@@ -8,12 +8,20 @@ void main() {
 
   setUp(() async {
     final file = File(testFilePath);
-    if (await file.exists()) await file.delete();
+    try {
+      if (await file.exists()) {
+        await file.writeAsString('[]');
+      }
+    } catch (_) {}
   });
 
   tearDown(() async {
     final file = File(testFilePath);
-    if (await file.exists()) await file.delete();
+    try {
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (_) {}
   });
 
   group('Task09 - Filtrado y Ordenamiento de Unidades', () {
