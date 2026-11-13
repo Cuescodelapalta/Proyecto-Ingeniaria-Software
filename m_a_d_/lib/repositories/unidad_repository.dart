@@ -51,6 +51,7 @@ class UnidadRepository {
 
   static Future<List<Map<String, dynamic>>> obtenerUnidades() async {
     try {
+      await actualizarVencimientos();
       final file = File(_filePath);
       if (!await file.exists()) {
         return [];
