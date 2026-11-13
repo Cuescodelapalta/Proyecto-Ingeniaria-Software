@@ -9,51 +9,53 @@ void main() {
 
   setUp(() async {
     final file = File(testFilePath);
-    if (await file.exists()) {
-      await file.delete();
-    }
+    try {
+      // Forzamos a que siempre exista y tenga un arreglo JSON válido vacío
+      await file.writeAsString('[]');
+    } catch (_) {}
   });
 
   tearDown(() async {
     final file = File(testFilePath);
-    if (await file.exists()) {
-      await file.delete();
-    }
+    try {
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (_) {}
   });
 
   group('UnidadRepository - Task08 (Alineado al Esquema Conceptual)', () {
     test('Calcula fecha_caducidad (+42 días) e inyecta estado Disponible', () async {
       final fechaExtraccion = DateTime(2026, 11, 1);
 
-        final guardadoExitoso = await UnidadRepository.guardarUnidad(
-          rutDonante: '123456785',
-          tipoSangre: 'O-',
-          fechaExtraccion: fechaExtraccion,
-          volumen: 450,
-          sede: 'Sede Concepción Central',
-        );
+      final guardadoExitoso = await UnidadRepository.guardarUnidad(
+        rutDonante: '123456785',
+        tipoSangre: 'O-',
+        fechaExtraccion: fechaExtraccion,
+        volumen: 450,
+        sede: 'Sede Concepción Central',
+      );
 
-        expect(guardadoExitoso, isTrue);
+      expect(guardadoExitoso, isTrue);
 
-        final List<dynamic> unidades = jsonDecode(
-          await File(testFilePath).readAsString(),
-        );
-        expect(unidades.length, 1);
+      final List<dynamic> unidades = jsonDecode(
+        await File(testFilePath).readAsString(),
+      );
+      expect(unidades.length, 1);
 
-        final unidad = unidades.first as Map<String, dynamic>;
-        expect(unidad['id'], 1);
-        expect(unidad['rut_donante'], '123456785');
-        expect(unidad['tipo_sangre'], 'O-');
-        expect(unidad['estado'], 'Disponible');
-        expect(unidad['fecha_extraccion'], '2026-11-01');
-        expect(unidad['fecha_caducidad'], '2026-12-13');
-        expect(unidad['volumen'], 450);
-        expect(
-          unidad['sede'],
-          'Sede Concepción Central',
-        ); // verificación de sede
-      },
-    );
+      final unidad = unidades.first as Map<String, dynamic>;
+      expect(unidad['id'], 1);
+      expect(unidad['rut_donante'], '123456785');
+      expect(unidad['tipo_sangre'], 'O-');
+      expect(unidad['estado'], 'Disponible');
+      expect(unidad['fecha_extraccion'], '2026-11-01');
+      expect(unidad['fecha_caducidad'], '2026-12-13');
+      expect(unidad['volumen'], 450);
+      expect(
+        unidad['sede'],
+        'Sede Concepción Central',
+      );
+    });
 
     test(
       'Incrementa el id entero, mantiene unidades previas y registra sedes',
@@ -74,14 +76,15 @@ void main() {
           sede: 'Sede Chillán',
         );
 
-      final List<dynamic> unidades = jsonDecode(await File(testFilePath).readAsString());
-      expect(unidades.length, 2);
-      expect(unidades[0]['id'], 1);
-      expect(unidades[0]['sede'], 'Sede Talcahuano');
-      expect(unidades[1]['id'], 2);
-      expect(unidades[1]['fecha_caducidad'], '2026-11-26');
-      expect(unidades[1]['estado'], 'Disponible');
-      expect(unidades[1]['sede'], 'Sede Chillán');
-    });
+        final List<dynamic> unidades = jsonDecode(await File(testFilePath).readAsString());
+        expect(unidades.length, 2);
+        expect(unidades[0]['id'], 1);
+        expect(unidades[0]['sede'], 'Sede Talcahuano');
+        expect(unidades[1]['id'], 2);
+        expect(unidades[1]['fecha_caducidad'], '2026-11-26');
+        expect(unidades[1]['estado'], 'Disponible');
+        expect(unidades[1]['sede'], 'Sede Chillán');
+      },
+    );
   });
 }
