@@ -13,6 +13,8 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
   final _datoController = TextEditingController();
   final _fechaController = TextEditingController();
   final _horaController = TextEditingController();
+  final _descripcionController = TextEditingController();
+  final _cantidadDonadaController = TextEditingController();
   DateTime? _fechaSeleccionada;
   TimeOfDay? _horaSeleccionada;
 
@@ -21,6 +23,8 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
     _datoController.dispose();
     _fechaController.dispose();
     _horaController.dispose();
+    _descripcionController.dispose();
+    _cantidadDonadaController.dispose();
     super.dispose();
   }
 
@@ -64,6 +68,14 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
 
     if (rut[rut.length - 1] != digitoVerificador) {
       return 'El dígito verificador del RUT no es válido';
+    }
+    return null;
+  }
+
+  String? _validarCantidadDonada(String? value) {
+    final cantidad = int.tryParse(value ?? '');
+    if (cantidad == null || cantidad <= 0) {
+      return 'Ingresa una cantidad mayor que 0';
     }
     return null;
   }
@@ -154,6 +166,29 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
               },
               validator: (_) =>
                   _horaSeleccionada == null ? 'Selecciona una hora' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _descripcionController,
+              keyboardType: TextInputType.text,
+              decoration: const InputDecoration(
+                labelText: 'Sede',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? 'Ingresé la sede de donación'
+                  : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _cantidadDonadaController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(
+                labelText: 'Cantidad donada (ml)',
+                border: OutlineInputBorder(),
+              ),
+              validator: _validarCantidadDonada,
             ),
             const SizedBox(height: 16),
             FilledButton(
