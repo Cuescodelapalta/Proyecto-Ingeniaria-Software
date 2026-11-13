@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'dart:io';
 
@@ -36,6 +35,64 @@ class DonanteRepository {
       return true;
     } catch (e) {
       return false;
+    }
+  }
+
+  /// Deja el RUT en formato comparable, sin puntos ni guion y en mayúscula
+  static String normalizarRut(String rut) => rut.trim().replaceAll(RegExp(r'[.-]'), '').toUpperCase();
+
+  /// Lee donantes.json. Si no existe o está vacío, devuelve una lista vacía.
+  static Future<List<dynamic>> _leerDonantes() async {
+    final file = File(_filePath);
+    if (!await file.exists()) return [];
+
+    final contenido = await file.readAsString();
+    if (contenido.trim().isEmpty) return [];
+
+    final dynamic datos = jsonDecode(contenido);
+    if (datos is! List) {
+      throw const FormatException(
+        'donantes.json no contiene una lista válida.',
+      );
+    }
+    return datos;
+  }
+
+  static bool _contieneRut(List<dynamic> donantes, String rut) {
+    final buscado = normalizarRut(rut);
+    return donantes.any((d) => d is Map && d['rut'] is String && normalizarRut(d['rut'] as String) == buscado);
+  }
+
+  /// true si el RUT ya está registrado en donantes.json.
+  static Future<bool> existeRut(String rut) async {
+    return _contieneRut(await _leerDonantes(), rut);
+  }
+
+  /// Guarda un donante solo si su RUT no existe ya en donantes.json
+  static Future<Map<String, Object>> guardarDonante(Map<String, dynamic> donante) async {
+    try {
+      final rut = donante['rut'];
+      if (rut is! String || rut.trim().isEmpty) {
+        return {'exito': false, 'mensaje': 'El donante debe tener un RUT.'};
+      }
+
+      final donantes = await _leerDonantes();
+
+      if (_contieneRut(donantes, rut)) {
+        return {
+          'exito': false,
+          'mensaje': 'RUT duplicado: el RUT $rut ya está registrado.',
+        };
+      }
+
+      donantes.add(donante);
+      await File(_filePath).writeAsString(
+        const JsonEncoder.withIndent('  ').convert(donantes),
+      );
+      
+      return {'exito': true, 'mensaje': 'Donante registrado correctamente.'};
+    } catch (e) {
+      return {'exito': false, 'mensaje': 'Error al guardar el donante: $e'};
     }
   }
 }
