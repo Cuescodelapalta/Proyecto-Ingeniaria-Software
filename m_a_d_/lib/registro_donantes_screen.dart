@@ -36,6 +36,14 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
     'O-',
   ];
 
+  String? _elegibilidadSeleccionada;
+
+  final List<String> _estadosElegibilidad = [
+    'Apto',
+    'Diferido',
+    'Rechazado',
+  ];
+  
   /// Libera los recursos de memoria al cerrar la ventana, para evitar fugas de memoria.
   @override
   void dispose() {
@@ -143,6 +151,26 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
                     setState(() => _tipoSangreSeleccionado = newValue),
               ),
               const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'Estado de evaluación clínica',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) =>
+                    value == null ? 'Debe seleccionar un estado de evaluación clínica' : null,
+                initialValue: _elegibilidadSeleccionada,
+                items: _estadosElegibilidad
+                    .map(
+                      (estado) => DropdownMenuItem<String>(
+                        value: estado,
+                        child: Text(estado),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) =>
+                    setState(() => _elegibilidadSeleccionada = value),
+              ),
+              const SizedBox(height: 16),
               _construirCampoTexto(
                 controlador: _controladorTelefono,
                 etiqueta: 'Teléfono',
@@ -173,7 +201,7 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
                       'tipoSangre': _tipoSangreSeleccionado,
                       'telefono':
                           int.tryParse(_controladorTelefono.text.trim()) ?? 0,
-                      'elegibilidad': 'Pendiente', //Reemplazar esto para task 4
+                      'elegibilidad': _elegibilidadSeleccionada, 
                       'fechaRetorno': null,
                     };
                     bool exito = await DonanteRepository.guardarDonanteReal(
@@ -194,7 +222,10 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
                       _controladorFechaNacimiento.clear();
                       _controladorPeso.clear();
                       _controladorTelefono.clear();
-                      setState(() => _tipoSangreSeleccionado = null);
+                      setState(() {
+                        _tipoSangreSeleccionado = null;
+                        _elegibilidadSeleccionada = null;
+                      },);
                     }
                   }
                 },
