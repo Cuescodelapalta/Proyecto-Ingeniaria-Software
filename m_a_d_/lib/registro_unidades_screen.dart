@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:m_a_d_/validador_donacion.dart';
 
+/// Formulario para registrar una unidad de sangre.
 class RegistroUnidadesScreen extends StatefulWidget {
   const RegistroUnidadesScreen({super.key});
 
@@ -11,15 +12,18 @@ class RegistroUnidadesScreen extends StatefulWidget {
 
 class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
   final _formKey = GlobalKey<FormState>();
+  // Controladores para leer y limpiar los valores ingresados.
   final _datoController = TextEditingController();
   final _fechaController = TextEditingController();
   final _descripcionController = TextEditingController();
   final _cantidadDonadaController = TextEditingController();
   DateTime? _fechaSeleccionada;
+  // Evita envíos duplicados mientras se guarda el registro.
   bool _guardando = false;
 
   @override
   void dispose() {
+    // Libera los controladores cuando se cierra la pantalla.
     _datoController.dispose();
     _fechaController.dispose();
     _descripcionController.dispose();
@@ -28,20 +32,24 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
   }
 
   Future<void> _guardarFormulario() async {
+    // No inicia el guardado si algún campo tiene errores.
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _guardando = true);
+    // El validador verifica el donante y delega el guardado al repositorio.
     final resultado = await ValidadorDonacion.procesarYGuardarUnidad(
       rutDonante: _datoController.text,
       fechaExtraccion: _fechaSeleccionada!,
       volumen: int.parse(_cantidadDonadaController.text),
       sede: _descripcionController.text.trim(),
     );
+    // La pantalla podría haberse cerrado durante la operación asíncrona.
     if (!mounted) return;
 
     setState(() => _guardando = false);
     final exito = resultado['exito'] == true;
     if (exito) {
+      // Solo limpia el formulario si el registro se guardó correctamente.
       _fechaSeleccionada = null;
       _datoController.clear();
       _fechaController.clear();
@@ -50,6 +58,7 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
       _formKey.currentState!.reset();
     }
 
+    // Informa si el guardado terminó correctamente o devolvió un error.
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(resultado['mensaje'] as String),
@@ -58,6 +67,7 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
     );
   }
 
+  /// Comprueba el formato y el dígito verificador chileno del RUT.
   String? _validarRut(String? value) {
     if (value == null || value.isEmpty) {
       return 'Completa este campo';
@@ -76,6 +86,7 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
 
     var suma = 0;
     var multiplicador = 2;
+    // Calcula la suma ponderada usada por el algoritmo módulo 11.
     for (var i = cuerpo.length - 1; i >= 0; i--) {
       suma += int.parse(cuerpo[i]) * multiplicador;
       multiplicador = multiplicador == 7 ? 2 : multiplicador + 1;
@@ -94,6 +105,7 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
     return null;
   }
 
+  /// Acepta solo cantidades enteras de mililitros mayores que cero.
   String? _validarCantidadDonada(String? value) {
     final cantidad = int.tryParse(value ?? '');
     if (cantidad == null || cantidad <= 0) {
@@ -111,6 +123,7 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // RUT del donante que se asociará a la unidad.
             TextFormField(
               controller: _datoController,
               keyboardType: TextInputType.text,
@@ -126,6 +139,7 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
               validator: _validarRut,
             ),
             SizedBox(height: 16),
+            // La fecha se elige con el selector y se muestra en formato dd/mm/aaaa.
             TextFormField(
               controller: _fechaController,
               readOnly: true,
@@ -155,6 +169,7 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
                   _fechaSeleccionada == null ? 'Selecciona una fecha' : null,
             ),
             const SizedBox(height: 16),
+            // Datos de la sede y el volumen donado.
             TextFormField(
               controller: _descripcionController,
               keyboardType: TextInputType.text,
