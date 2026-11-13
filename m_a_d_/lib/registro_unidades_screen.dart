@@ -41,6 +41,15 @@ class _RegistroUnidadesScreenState extends State<RegistroUnidadesScreen> {
 
     setState(() => _guardando = false);
     final exito = resultado['exito'] == true;
+    if (exito) {
+      _fechaSeleccionada = null;
+      _datoController.clear();
+      _fechaController.clear();
+      _descripcionController.clear();
+      _cantidadDonadaController.clear();
+      _formKey.currentState!.reset();
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(resultado['mensaje'] as String),
