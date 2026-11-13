@@ -65,29 +65,59 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
               _construirCampoTexto(
                 controlador: _controladorRut,
                 etiqueta: 'RUT',
-                validador: (value) => (value == null || value.trim().isEmpty)
-                    ? 'El RUT es obligatorio'
-                    : null,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d{1,8}[0-9K]$')),
+                ],
+                validador: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'El RUT es obligatorio';
+                  }
+                  if (!RegExp(r'^\d{1,8}[0-9K]$').hasMatch(value.trim())) {
+                    return 'Formato inválido. Use guion y sin puntos';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               _construirCampoTexto(
                 controlador: _controladorNombre,
                 etiqueta: 'Nombre completo',
-                validador: (value) => (value == null || value.trim().isEmpty)
-                    ? 'El nombre es obligatorio'
-                    : null,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(
+                    RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]'),
+                  ),
+                ],
+                validador: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'El nombre es obligatorio';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               _construirCampoTexto(
                 controlador: _controladorFechaNacimiento,
                 etiqueta: 'Fecha de nacimiento',
-                tipoTeclado: TextInputType.datetime,
+                validador: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'La fecha de nacimiento es obligatoria';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               _construirCampoTexto(
                 controlador: _controladorPeso,
                 etiqueta: 'Peso (kg)',
-                tipoTeclado: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                ],
+                validador: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'El peso es obligatorio';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
@@ -95,6 +125,8 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
                   labelText: 'Tipo de sangre',
                   border: OutlineInputBorder(),
                 ),
+                validator: (value) =>
+                    value == null ? 'Debe seleccionar un tipo de sangre' : null,
                 initialValue: _tipoSangreSeleccionado,
                 items: _tiposSangre
                     .map(
@@ -111,12 +143,17 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
               _construirCampoTexto(
                 controlador: _controladorTelefono,
                 etiqueta: 'Teléfono',
-                tipoTeclado: TextInputType.phone,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                   // Restringe la entrada a solo 11 digitos númericos
                   LengthLimitingTextInputFormatter(11),
                 ],
+                validador: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'El teléfono es obligatorio';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 32),
 
@@ -170,19 +207,16 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
   /// Construye una celda de texto reutilizable para las distintas opciones.
   /// [controlador] administra el texto ingresado.
   /// [etiqueta] define el texto flotante de ayuda visual.
-  /// [tipoTeclado] adapta el teclado del dispositivo.
   /// [validador] recibe una función para evaluar que no existan campos vacíos.
   /// [inputFormatters] permite restringir los caracteres que se pueden ingresar.
   Widget _construirCampoTexto({
     required TextEditingController controlador,
     required String etiqueta,
-    TextInputType tipoTeclado = TextInputType.text,
     FormFieldValidator<String>? validador,
     List<TextInputFormatter>? inputFormatters,
   }) {
     return TextFormField(
       controller: controlador,
-      keyboardType: tipoTeclado,
       inputFormatters: inputFormatters,
       decoration: InputDecoration(
         labelText: etiqueta,
