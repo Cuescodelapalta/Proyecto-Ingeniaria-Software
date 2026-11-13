@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'dart:io';
 
@@ -39,26 +38,74 @@ class DonanteRepository {
     }
   }
 
-  static Future<bool> guardarDonanteReal(Map<String,dynamic> donanteData)async{
-    try {
-      final file = File(_filePath);
+  /// Deja el RUT en formato comparable, sin puntos ni guion y en mayúscula
+  static String normalizarRut(String rut) =>
+      rut.trim().replaceAll(RegExp(r'[.-]'), '').toUpperCase();
 
-      if (!await file.exists()) {
-        await file.writeAsString(jsonEncode([]));
+  /// Lee donantes.json. Si no existe o está vacío, devuelve una lista vacía.
+  static Future<List<dynamic>> _leerDonantes() async {
+    final file = File(_filePath);
+    if (!await file.exists()) return [];
+
+    final contenido = await file.readAsString();
+    if (contenido.trim().isEmpty) return [];
+
+    final dynamic datos = jsonDecode(contenido);
+    if (datos is! List) {
+      throw const FormatException(
+        'donantes.json no contiene una lista válida.',
+      );
+    }
+    return datos;
+  }
+
+  static bool _contieneRut(List<dynamic> donantes, String rut) {
+    final buscado = normalizarRut(rut);
+    return donantes.any((d) =>
+        d is Map &&
+        d['rut'] is String &&
+        normalizarRut(d['rut'] as String) == buscado);
+  }
+
+  /// true si el RUT ya está registrado en donantes.json.
+  static Future<bool> existeRut(String rut) async {
+    return _contieneRut(await _leerDonantes(), rut);
+  }
+
+  /// Guarda un donante solo si su RUT no existe ya en donantes.json
+  static Future<Map<String, Object>> guardarDonante(
+      Map<String, dynamic> donante) async {
+    try {
+      final rut = donante['rut'];
+      if (rut is! String || rut.trim().isEmpty) {
+        return {'exito': false, 'mensaje': 'El donante debe tener un RUT.'};
       }
 
-      final String contenido = await file.readAsString();
-      List<dynamic> listaDonantes = jsonDecode(contenido);
+      final donantes = await _leerDonantes();
 
-      listaDonantes.add(donanteData);
+      if (_contieneRut(donantes, rut)) {
+        return {
+          'exito': false,
+          'mensaje': 'RUT duplicado: el RUT $rut ya está registrado.',
+        };
+      }
 
-      await file.writeAsString(
-        const JsonEncoder.withIndent('  ').convert(listaDonantes),
+      donantes.add(donante);
+      await File(_filePath).writeAsString(
+        const JsonEncoder.withIndent('  ').convert(donantes),
       );
 
-      return true;
+      return {'exito': true, 'mensaje': 'Donante registrado correctamente.'};
     } catch (e) {
-      return false;
+      return {'exito': false, 'mensaje': 'Error al guardar el donante: $e'};
     }
+  }
+
+  /// Método de compatibilidad para la UI (RegistroDonanteScreen) que retorna booleano,
+  /// integrando la validación estricta de RUT duplicado.
+  static Future<bool> guardarDonanteReal(
+      Map<String, dynamic> donanteData) async {
+    final resultado = await guardarDonante(donanteData);
+    return resultado['exito'] == true;
   }
 }
