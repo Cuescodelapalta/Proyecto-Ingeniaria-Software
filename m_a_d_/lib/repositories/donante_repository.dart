@@ -81,6 +81,16 @@ class DonanteRepository {
         return {'exito': false, 'mensaje': 'El donante debe tener un RUT.'};
       }
 
+      const estadosEvaluacion = {'Apto', 'Diferido', 'Rechazado'};
+      final elegibilidad = donante['elegibilidad'];
+      if (elegibilidad is! String ||
+          !estadosEvaluacion.contains(elegibilidad)) {
+        return {
+          'exito': false,
+          'mensaje': 'La elegibilidad debe ser Apto, Diferido o Rechazado.',
+        };
+      }
+
       final donantes = await _leerDonantes();
 
       if (_contieneRut(donantes, rut)) {
@@ -90,7 +100,10 @@ class DonanteRepository {
         };
       }
 
-      donantes.add(donante);
+      final registro = elegibilidad == 'Apto'
+          ? donante
+          : {'rut': rut.trim(), 'elegibilidad': elegibilidad};
+      donantes.add(registro);
       await File(_filePath).writeAsString(
         const JsonEncoder.withIndent('  ').convert(donantes),
       );
