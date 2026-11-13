@@ -66,14 +66,14 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
                 controlador: _controladorRut,
                 etiqueta: 'RUT',
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d{1,8}[0-9K]$')),
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9K]')),
                 ],
                 validador: (value) {
-                  if (value == null || value.trim().isEmpty) {
+                  if (value == null || value.trim().isEmpty) {  
                     return 'El RUT es obligatorio';
                   }
                   if (!RegExp(r'^\d{1,8}[0-9K]$').hasMatch(value.trim())) {
-                    return 'Formato inválido. Use guion y sin puntos';
+                    return 'Ingresa el RUT sin puntos ni guion';
                   }
                   return null;
                 },
@@ -98,6 +98,9 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
               _construirCampoTexto(
                 controlador: _controladorFechaNacimiento,
                 etiqueta: 'Fecha de nacimiento',
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9/]')),
+                ],
                 validador: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'La fecha de nacimiento es obligatoria';
