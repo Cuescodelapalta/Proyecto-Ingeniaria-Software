@@ -69,4 +69,28 @@ void main() {
     final lista = jsonDecode(await File(filePath).readAsString()) as List<dynamic>;
     expect(lista.length, 2);
   });
+
+  for (final estado in ['Apto', 'Diferido', 'Rechazado']) {
+    test('Persiste la elegibilidad $estado en donantes.json', () async {
+      final registro = {
+        'rut': '123456785',
+        'nombre': 'Donante Test',
+        'fechaNacimiento': '2000-01-01',
+        'peso': 70.0,
+        'tipoSangre': 'O+',
+        'telefono': 912345678,
+        'elegibilidad': estado,
+        'fechaRetorno': null,
+      };
+
+      final resultado = await DonanteRepository.guardarDonante(registro);
+
+      expect(resultado['exito'], isTrue);
+
+      final lista =
+          jsonDecode(await File(filePath).readAsString()) as List<dynamic>;
+      expect(lista.single['rut'], '123456785');
+      expect(lista.single['elegibilidad'], estado);
+    });
+}
 }

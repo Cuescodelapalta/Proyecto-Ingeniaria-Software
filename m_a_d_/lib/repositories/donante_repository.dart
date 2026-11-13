@@ -100,10 +100,7 @@ class DonanteRepository {
         };
       }
 
-      final registro = elegibilidad == 'Apto'
-          ? donante
-          : {'rut': rut.trim(), 'elegibilidad': elegibilidad};
-      donantes.add(registro);
+      donantes.add(donante);
       await File(_filePath).writeAsString(
         const JsonEncoder.withIndent('  ').convert(donantes),
       );
