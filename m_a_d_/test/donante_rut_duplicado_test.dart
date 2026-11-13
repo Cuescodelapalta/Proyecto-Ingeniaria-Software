@@ -80,7 +80,7 @@ void main() {
         'tipoSangre': 'O+',
         'telefono': 912345678,
         'elegibilidad': estado,
-        'fechaRetorno': null,
+        'fechaRetorno': estado == 'Diferido' ? '2027-01-01' : null,
       };
 
       final resultado = await DonanteRepository.guardarDonante(registro);
@@ -91,6 +91,25 @@ void main() {
           jsonDecode(await File(filePath).readAsString()) as List<dynamic>;
       expect(lista.single['rut'], '123456785');
       expect(lista.single['elegibilidad'], estado);
+      if (estado == 'Diferido') {
+        expect(lista.single['fechaRetorno'], '2027-01-01');
+      }
     });
 }
+test('Rechaza guardar un donante diferido si no registra fecha de retorno (RF-11)', () async {
+    final registroDiferidoSinFecha = {
+      'rut': '123456785',
+      'nombre': 'Donante Test',
+      'fechaNacimiento': '2000-01-01',
+      'peso': 70.0,
+      'tipoSangre': 'O+',
+      'telefono': 912345678,
+      'elegibilidad': 'Diferido',
+      'fechaRetorno': null, // Falta obligatoriamente
+    };
+
+    final resultado = await DonanteRepository.guardarDonante(registroDiferidoSinFecha);
+    expect(resultado['exito'], isFalse);
+    expect(resultado['mensaje'], contains('cuándo podrá volver a donar'));
+  });
 }

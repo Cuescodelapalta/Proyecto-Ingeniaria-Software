@@ -22,7 +22,7 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
   final _controladorPeso = TextEditingController();
   final _controladorTelefono = TextEditingController();
 
-  /// Almacena el valor actual en el menú desplegable.
+  /// Almacena el valor actual en el menú desplegable de tipo de sangre.
   String? _tipoSangreSeleccionado;
 
   final List<String> _tiposSangre = [
@@ -43,6 +43,9 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
     'Diferido',
     'Rechazado',
   ];
+
+  // Variable para almacenar la fecha de retorno en caso de ser "Diferido" (RF-11)
+  DateTime? _fechaRetornoSeleccionada;
   
   /// Libera los recursos de memoria al cerrar la ventana, para evitar fugas de memoria.
   @override
@@ -59,7 +62,7 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Registrar nuevo donante'),
+        title: const Text('Registrar nuevo donante'),
         backgroundColor: Colors.red,
         foregroundColor: Colors.white,
       ),
@@ -168,8 +171,47 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
                     )
                     .toList(),
                 onChanged: (value) =>
-                    setState(() => _elegibilidadSeleccionada = value),
+                    setState(() {
+                      _elegibilidadSeleccionada = value;
+                      // Si cambia a un estado diferente de Diferido, limpiamos la fecha de retorno
+                      if (value != 'Diferido') {
+                        _fechaRetornoSeleccionada = null;
+                      }
+                    }),
               ),
+
+              // Campo condicional para la Fecha de Retorno si el estado es Diferido (RF-11)[cite: 8]
+              if (_elegibilidadSeleccionada == 'Diferido') ...[
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () async {
+                    final DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now().add(const Duration(days: 90)), // Sugiere 3 meses por defecto
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+                    );
+                    if (picked != null) {
+                      setState(() => _fechaRetornoSeleccionada = picked);
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: 'Fecha en que podrá volver a donar *',
+                      border: const OutlineInputBorder(),
+                      errorText: _fechaRetornoSeleccionada == null 
+                          ? 'Debe seleccionar una fecha de retorno para diferidos' 
+                          : null,
+                    ),
+                    child: Text(
+                      _fechaRetornoSeleccionada == null
+                          ? 'Seleccionar fecha de retorno'
+                          : '${_fechaRetornoSeleccionada!.year}-${_fechaRetornoSeleccionada!.month.toString().padLeft(2, '0')}-${_fechaRetornoSeleccionada!.day.toString().padLeft(2, '0')}',
+                    ),
+                  ),
+                ),
+              ],
+
               const SizedBox(height: 16),
               _construirCampoTexto(
                 controlador: _controladorTelefono,
@@ -190,23 +232,36 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
 
               ElevatedButton(
                 onPressed: () async {
+                  // Validación manual rápida si está diferido y no seleccionó fecha
+                  if (_elegibilidadSeleccionada == 'Diferido' && _fechaRetornoSeleccionada == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Un donante diferido debe registrar cuándo podrá volver a donar.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
                   if (_formKey.currentState!.validate()) {
                     final nuevoDonante = {
                       'rut': _controladorRut.text.trim(),
                       'nombre': _controladorNombre.text.trim(),
-                      'fechaNacimiento': _controladorFechaNacimiento.text
-                          .trim(),
-                      'peso':
-                          double.tryParse(_controladorPeso.text.trim()) ?? 0.0,
+                      'fechaNacimiento': _controladorFechaNacimiento.text.trim(),
+                      'peso': double.tryParse(_controladorPeso.text.trim()) ?? 0.0,
                       'tipoSangre': _tipoSangreSeleccionado,
-                      'telefono':
-                          int.tryParse(_controladorTelefono.text.trim()) ?? 0,
+                      'telefono': int.tryParse(_controladorTelefono.text.trim()) ?? 0,
                       'elegibilidad': _elegibilidadSeleccionada, 
-                      'fechaRetorno': null,
+                      // Persiste la fecha de retorno en formato YYYY-MM-DD o null si no aplica (RF-11)[cite: 8]
+                      'fechaRetorno': _elegibilidadSeleccionada == 'Diferido' && _fechaRetornoSeleccionada != null
+                          ? '${_fechaRetornoSeleccionada!.year}-${_fechaRetornoSeleccionada!.month.toString().padLeft(2, '0')}-${_fechaRetornoSeleccionada!.day.toString().padLeft(2, '0')}'
+                          : null,
                     };
+
                     bool exito = await DonanteRepository.guardarDonanteReal(
                       nuevoDonante,
                     );
+                    
                     if (exito && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -225,7 +280,8 @@ class _RegistroDonanteScreenState extends State<RegistroDonanteScreen> {
                       setState(() {
                         _tipoSangreSeleccionado = null;
                         _elegibilidadSeleccionada = null;
-                      },);
+                        _fechaRetornoSeleccionada = null;
+                      });
                     }
                   }
                 },

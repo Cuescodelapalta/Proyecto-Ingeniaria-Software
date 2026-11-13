@@ -91,6 +91,17 @@ class DonanteRepository {
         };
       }
 
+      // Validación RF-11: Si es diferido temporalmente, debe registrar cuándo podrá volver a donar[cite: 8]
+      if (elegibilidad == 'Diferido') {
+        final fechaRetorno = donante['fechaRetorno'];
+        if (fechaRetorno == null || (fechaRetorno is String && fechaRetorno.trim().isEmpty)) {
+          return {
+            'exito': false,
+            'mensaje': 'Un donante diferido debe registrar cuándo podrá volver a donar.',
+          };
+        }
+      }
+
       final donantes = await _leerDonantes();
 
       if (_contieneRut(donantes, rut)) {
@@ -112,7 +123,7 @@ class DonanteRepository {
   }
 
   /// Método de compatibilidad para la UI (RegistroDonanteScreen) que retorna booleano,
-  /// integrando la validación estricta de RUT duplicado.
+  /// integrando la validación estricta de RUT duplicado y elegibilidad.
   static Future<bool> guardarDonanteReal(
       Map<String, dynamic> donanteData) async {
     final resultado = await guardarDonante(donanteData);
