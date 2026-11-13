@@ -5,6 +5,7 @@ class UnidadRepository {
   static const String _filePath = 'unidades.json';
 
   static Future<bool> guardarUnidad({
+    required String rutDonante,
     required String tipoSangre,
     required DateTime fechaExtraccion,
     required int volumen,
@@ -29,6 +30,7 @@ class UnidadRepository {
 
       final nuevaUnidad = {
         'id': nuevoId,
+        'rut_donante': rutDonante,
         'tipo_sangre': tipoSangre,
         'estado': estadoInicial,
         'fecha_caducidad': fechaCaducidad.toIso8601String().split('T').first,

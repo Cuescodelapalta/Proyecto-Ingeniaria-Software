@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:m_a_d_/repositories/unidad_repository.dart';
 
 class ValidadorDonacion {
@@ -27,7 +28,9 @@ class ValidadorDonacion {
       // 1. Buscar al donante por su RUT de forma segura
       dynamic donanteEncontrado;
       for (var d in donantes) {
-        if (d['rut'] == rutDonante) {
+        if (d is Map<String, dynamic> &&
+            d['rut'] is String &&
+            _normalizarRut(d['rut'] as String) == _normalizarRut(rutDonante)) {
           donanteEncontrado = d;
           break;
         }
@@ -54,6 +57,7 @@ class ValidadorDonacion {
 
       // 4. Guardar la unidad usando el UnidadRepository (Task08)
       final bool guardadoExitoso = await UnidadRepository.guardarUnidad(
+        rutDonante: rutDonante,
         tipoSangre: tipoSangreHeredado,
         fechaExtraccion: fechaExtraccion,
         volumen: volumen,
@@ -63,20 +67,23 @@ class ValidadorDonacion {
       if (!guardadoExitoso) {
         return {
           'exito': false,
-          'mensaje': 'Error al intentar guardar la unidad en unidades.json.'
+          'mensaje': 'Error al intentar guardar la unidad en unidades.json.',
         };
       }
 
       return {
         'exito': true,
-        'mensaje': 'Unidad procesada con éxito. Tipo de sangre heredado: $tipoSangreHeredado'
+        'mensaje':
+            'Unidad procesada con éxito. Tipo de sangre heredado: $tipoSangreHeredado',
       };
-
     } catch (e) {
       return {
         'exito': false,
-        'mensaje': 'Error inesperado durante la validación: $e'
+        'mensaje': 'Error inesperado durante la validación: $e',
       };
     }
   }
+
+  static String _normalizarRut(String rut) =>
+      rut.trim().replaceAll(RegExp(r'[.-]'), '').toUpperCase();
 }

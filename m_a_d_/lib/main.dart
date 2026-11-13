@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:m_a_d_/home_screen.dart';
 
 void main() {
-  runApp(const MainApp());
-}
+  runApp(const MaterialApp(
+    title: 'M.A.D',
+    debugShowCheckedModeBanner: false,
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(body: Center(child: Text('Hello World!'))),
-    );
-  }
+    home: HomeScreen(),
+  ));
 }

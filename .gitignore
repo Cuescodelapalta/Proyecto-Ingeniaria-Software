@@ -91,3 +91,6 @@ app.*.map.json
 # Keep application dependency versions reproducible. This also overrides
 # parent-directory ignore rules when this project is nested in another repo.
 !pubspec.lock
+
+m_a_d_/donantes.json
+m_a_d_/unidades.json
