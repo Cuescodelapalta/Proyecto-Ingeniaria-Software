@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "rut_donante": "123456785",
+    "tipo_sangre": "O+",
+    "estado": "Disponible",
+    "fecha_caducidad": "2026-12-29",
+    "fecha_extraccion": "2026-11-17",
+    "volumen": 450,
+    "sede": "Concepción"
+  },
+  {
+    "id": 2,
+    "rut_donante": "123456785",
+    "tipo_sangre": "O+",
+    "estado": "Disponible",
+    "fecha_caducidad": "2026-12-29",
+    "fecha_extraccion": "2026-11-17",
+    "volumen": 450,
+    "sede": "Concepción"
+  }
+]
