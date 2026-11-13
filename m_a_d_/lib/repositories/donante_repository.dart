@@ -38,4 +38,27 @@ class DonanteRepository {
       return false;
     }
   }
+
+  static Future<bool> guardarDonanteReal(Map<String,dynamic> donanteData)async{
+    try {
+      final file = File(_filePath);
+
+      if (!await file.exists()) {
+        await file.writeAsString(jsonEncode([]));
+      }
+
+      final String contenido = await file.readAsString();
+      List<dynamic> listaDonantes = jsonDecode(contenido);
+
+      listaDonantes.add(donanteData);
+
+      await file.writeAsString(
+        const JsonEncoder.withIndent('  ').convert(listaDonantes),
+      );
+
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }
