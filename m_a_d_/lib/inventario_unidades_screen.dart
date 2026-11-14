@@ -162,16 +162,16 @@ class _InventarioUnidadesScreenState extends State<InventarioUnidadesScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.amber.shade50,
+                color: Colors.red.shade100,
                 border: Border(
-                  bottom: BorderSide(color: Colors.orange.shade300),
+                  bottom: BorderSide(color: Colors.red.shade400, width: 1.5),
                 ),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.warning_amber_rounded,
-                    color: Colors.orange.shade800,
+                    color: Colors.red.shade900,
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -180,8 +180,8 @@ class _InventarioUnidadesScreenState extends State<InventarioUnidadesScreen> {
                           ? 'Alerta: 1 unidad por vencer en los próximos 7 días.'
                           : 'Alerta: $cantidadPorVencer unidades por vencer en los próximos 7 días.',
                       style: TextStyle(
-                        color: Colors.orange.shade900,
-                        fontWeight: FontWeight.w600,
+                        color: Colors.red.shade900,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
@@ -205,7 +205,7 @@ class _InventarioUnidadesScreenState extends State<InventarioUnidadesScreen> {
                               child: ConstrainedBox(
                                 constraints: BoxConstraints(minWidth: constraints.maxWidth),
                                 child: DataTable(
-                                  headingRowColor: WidgetStateProperty.all(Colors.red.shade50),
+                                  headingRowColor: WidgetStateProperty.all(Colors.grey.shade200),
                                   columns: const [
                                     DataColumn(label: Text('ID', style: TextStyle(fontWeight: FontWeight.bold))),
                                     DataColumn(label: Text('Tipo', style: TextStyle(fontWeight: FontWeight.bold))),
@@ -230,7 +230,7 @@ class _InventarioUnidadesScreenState extends State<InventarioUnidadesScreen> {
                                     return DataRow(
                                       color: porVencer
                                           ? WidgetStateProperty.all(
-                                              Colors.amber.shade50,
+                                              Colors.red.shade100,
                                             )
                                           : null,
                                       cells: [
@@ -254,9 +254,7 @@ class _InventarioUnidadesScreenState extends State<InventarioUnidadesScreen> {
                                             ),
                                           ),
                                         ),
-                                        DataCell(
-                                          Text(unidad['rut_donante'] ?? ''),
-                                        ),
+                                        DataCell(Text(unidad['rut_donante'] ?? ''),),
                                         DataCell(Text(unidad['estado'] ?? '')),
                                         DataCell(Text('${unidad['volumen']} ml'),),
                                         DataCell(Text(unidad['sede'] ?? '')),
@@ -265,7 +263,7 @@ class _InventarioUnidadesScreenState extends State<InventarioUnidadesScreen> {
                                               if (porVencer) ...[
                                                 Icon(
                                                   Icons.warning_amber_rounded,
-                                                  color: Colors.orange.shade800,
+                                                  color: Colors.red.shade900,
                                                   size: 18,
                                                 ),
                                                 const SizedBox(width: 4),
@@ -273,10 +271,10 @@ class _InventarioUnidadesScreenState extends State<InventarioUnidadesScreen> {
                                               Text(
                                                 unidad['fecha_caducidad'] ?? '',
                                                 style: TextStyle(
-                                                  fontWeight: FontWeight.w600,
+                                                  fontWeight: porVencer ? FontWeight.bold : FontWeight.normal,
                                                   color: porVencer
-                                                      ? Colors.orange.shade900
-                                                      : Colors.red,
+                                                      ? Colors.red.shade900
+                                                      : Colors.black87,
                                                 ),
                                               ),
                                               if (porVencer) ...[
@@ -287,14 +285,10 @@ class _InventarioUnidadesScreenState extends State<InventarioUnidadesScreen> {
                                                   ),
                                                   decoration: BoxDecoration(
                                                     color:
-                                                        Colors.orange.shade100,
+                                                        Colors.red.shade700,
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                       4,
-                                                    ),
-                                                    border: Border.all(
-                                                      color: Colors
-                                                          .orange.shade400,
                                                     ),
                                                   ),
                                                   child: Text(
