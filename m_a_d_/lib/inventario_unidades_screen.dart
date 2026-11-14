@@ -73,6 +73,11 @@ class _InventarioUnidadesScreenState extends State<InventarioUnidadesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final int cantidadPorVencer = _unidadesFiltradas.where((item){
+      return UnidadRepository.estaPorVencer(
+        Map<String, dynamic>.from(item as Map),
+      );
+    }).length;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gestión de Inventario de Unidades'),
@@ -150,6 +155,41 @@ class _InventarioUnidadesScreenState extends State<InventarioUnidadesScreen> {
             ),
           ),
 
+
+// Notificación visual superior de unidades por vencer (Task12)
+          if (!_estaCargando && cantidadPorVencer > 0)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                border: Border(
+                  bottom: BorderSide(color: Colors.orange.shade300),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.orange.shade800,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      cantidadPorVencer == 1
+                          ? 'Alerta: 1 unidad por vencer en los próximos 7 días.'
+                          : 'Alerta: $cantidadPorVencer unidades por vencer en los próximos 7 días.',
+                      style: TextStyle(
+                        color: Colors.orange.shade900,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+
           // Tabla con ocupación de ancho completo gracias a LayoutBuilder y ConstrainedBox
           Expanded(
             child: _estaCargando
@@ -176,36 +216,106 @@ class _InventarioUnidadesScreenState extends State<InventarioUnidadesScreen> {
                                     DataColumn(label: Text('Extracción', style: TextStyle(fontWeight: FontWeight.bold))),
                                     DataColumn(label: Text('Caducidad', style: TextStyle(fontWeight: FontWeight.bold))),
                                   ],
-                                  rows: _unidadesFiltradas.map((item) {
-                                    final unidad = item;
-                                    return DataRow(cells: [
-                                      DataCell(Text('#${unidad['id']}')),
-                                      DataCell(
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red.shade700,
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            unidad['tipo_sangre'] ?? '',
-                                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  rows: _unidadesFiltradas.map((item) {final unidad = Map<String, dynamic>.from(
+                                      item as Map,
+                                    );
+                                    final bool porVencer =
+                                        UnidadRepository.estaPorVencer(unidad);
+                                    final int diasRestantes = porVencer
+                                        ? UnidadRepository.diasParaVencer(
+                                            unidad['fecha_caducidad'] as String,
+                                          )
+                                        : 0;
+
+                                    return DataRow(
+                                      color: porVencer
+                                          ? WidgetStateProperty.all(
+                                              Colors.amber.shade50,
+                                            )
+                                          : null,
+                                      cells: [
+                                        DataCell(Text('#${unidad['id']}')),
+                                        DataCell(Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red.shade700,
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              unidad['tipo_sangre'] ?? '',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      DataCell(Text(unidad['rut_donante'] ?? '')),
-                                      DataCell(Text(unidad['estado'] ?? '')),
-                                      DataCell(Text('${unidad['volumen']} ml')),
-                                      DataCell(Text(unidad['sede'] ?? '')),
-                                      DataCell(Text(unidad['fecha_extraccion'] ?? '')),
-                                      DataCell(
-                                        Text(
-                                          unidad['fecha_caducidad'] ?? '',
-                                          style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.red),
+                                        DataCell(
+                                          Text(unidad['rut_donante'] ?? ''),
                                         ),
-                                      ),
-                                    ]);
-                                  }).toList(),
+                                        DataCell(Text(unidad['estado'] ?? '')),
+                                        DataCell(Text('${unidad['volumen']} ml'),),
+                                        DataCell(Text(unidad['sede'] ?? '')),
+                                        DataCell(Text(unidad['fecha_extraccion'] ?? '',),),
+                                        DataCell( Row( mainAxisSize: MainAxisSize.min,children: [
+                                              if (porVencer) ...[
+                                                Icon(
+                                                  Icons.warning_amber_rounded,
+                                                  color: Colors.orange.shade800,
+                                                  size: 18,
+                                                ),
+                                                const SizedBox(width: 4),
+                                              ],
+                                              Text(
+                                                unidad['fecha_caducidad'] ?? '',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  color: porVencer
+                                                      ? Colors.orange.shade900
+                                                      : Colors.red,
+                                                ),
+                                              ),
+                                              if (porVencer) ...[
+                                                const SizedBox(width: 6),
+                                                Container( padding: const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 2,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color:
+                                                        Colors.orange.shade100,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      4,
+                                                    ),
+                                                    border: Border.all(
+                                                      color: Colors
+                                                          .orange.shade400,
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    diasRestantes == 0
+                                                        ? 'Vence hoy'
+                                                        : 'Por vencer ($diasRestantes d)',
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors
+                                                          .orange.shade900,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    );}).toList(),
                                 ),
                               ),
                             ),

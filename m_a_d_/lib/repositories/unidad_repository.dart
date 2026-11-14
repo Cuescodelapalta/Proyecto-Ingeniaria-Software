@@ -128,4 +128,36 @@ class UnidadRepository {
       );
     }
   }
+  /// calcula dias calendario restantes hasta la fecha de vencimiento.
+  static int diasParaVencer(
+    String fechaCaducidadStr, {
+    DateTime? fechaReferencia,
+  }) {
+    final hoy = fechaReferencia ?? DateTime.now();
+    final fechaActual = DateTime(hoy.year, hoy.month, hoy.day);
+    final caducidad = DateTime.parse(fechaCaducidadStr);
+    final fechaCaducidad = DateTime(
+      caducidad.year,
+      caducidad.month,
+      caducidad.day,
+    );
+    return fechaCaducidad.difference(fechaActual).inDays;
+  }
+
+  /// Determina si una unidad disponible vence en 7 días o menos (Task12).
+  static bool estaPorVencer(
+    Map<String, dynamic> unidad, {
+    int diasAlerta = 7,
+    DateTime? fechaReferencia,
+  }) {
+    if (unidad['estado'] != 'Disponible') return false;
+    final String? fechaStr = unidad['fecha_caducidad'] as String?;
+    if (fechaStr == null || fechaStr.isEmpty) return false;
+
+    final int diasRestantes = diasParaVencer(
+      fechaStr,
+      fechaReferencia: fechaReferencia,
+    );
+    return diasRestantes >= 0 && diasRestantes <= diasAlerta;
+  }
 }
