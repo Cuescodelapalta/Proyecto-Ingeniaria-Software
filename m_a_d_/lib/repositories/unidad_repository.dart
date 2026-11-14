@@ -23,7 +23,9 @@ class UnidadRepository {
           ? 1
           : (listaUnidades.last['id'] as int) + 1;
 
-      final DateTime fechaCaducidad = fechaExtraccion.add(const Duration(days: 42));
+      final DateTime fechaCaducidad = fechaExtraccion.add(
+        const Duration(days: 42),
+      );
       const String estadoInicial = 'Disponible';
 
       final nuevaUnidad = {
@@ -46,27 +48,29 @@ class UnidadRepository {
       return false;
     }
   }
-static Future<List<Map<String, dynamic>>> obtenerUnidades() async {
-  try{
-    final file = File(_filePath);
-    if(!await file.exists()){
+
+  static Future<List<Map<String, dynamic>>> obtenerUnidades() async {
+    try {
+      await actualizarVencimientos();
+      final file = File(_filePath);
+      if (!await file.exists()) {
+        return [];
+      }
+      final String contenido = await file.readAsString();
+      final List<dynamic> datos = jsonDecode(contenido);
+      return datos.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    } catch (e) {
       return [];
     }
-    final String contenido = await file.readAsString();
-    final List<dynamic> datos = jsonDecode(contenido);
-    return datos.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-  } catch (e){
-    return [];
   }
-}
 
-/// filtra las unidades por estado y tipo de sangre, y las ordena por 
+  /// filtra las unidades por estado y tipo de sangre, y las ordena por
   /// la fecha de caducidad mas proxima (FEFO).
-static Future<List<Map<String, dynamic>>> filtrarUnidades({
+  static Future<List<Map<String, dynamic>>> filtrarUnidades({
     String? tipoSangre,
     bool soloDisponibles = true,
   }) async {
-List<Map<String, dynamic>> unidades = await obtenerUnidades();
+    List<Map<String, dynamic>> unidades = await obtenerUnidades();
 
     //filtra solo las que estan disponibles en inventario
     if (soloDisponibles) {
@@ -74,7 +78,9 @@ List<Map<String, dynamic>> unidades = await obtenerUnidades();
     }
 
     // 2. Filtrar por grupo sanguíneo específico (si se solicita)
-    if (tipoSangre != null && tipoSangre.trim().isNotEmpty && tipoSangre != 'Todos') {
+    if (tipoSangre != null &&
+        tipoSangre.trim().isNotEmpty &&
+        tipoSangre != 'Todos') {
       unidades = unidades.where((u) => u['tipo_sangre'] == tipoSangre).toList();
     }
 
@@ -88,12 +94,38 @@ List<Map<String, dynamic>> unidades = await obtenerUnidades();
     return unidades;
   }
 
+  static Future<void> actualizarVencimientos() async {
+    final file = File(_filePath);
+    if (!await file.exists()) return;
 
+    final String contenido = await file.readAsString();
+    if (contenido.trim().isEmpty) return;
 
+    List<dynamic> unidades = jsonDecode(contenido);
+    bool cambio = false;
+    final hoy = DateTime.now();
+    final fechaActual = DateTime(hoy.year, hoy.month, hoy.day);
 
+    for (var i = 0; i < unidades.length; i++) {
+      final unidad = unidades[i];
+      if (unidad['estado'] == 'Disponible') {
+        final caducidad = DateTime.parse(unidad['fecha_caducidad']);
+        final fechaCaducidad = DateTime(
+          caducidad.year,
+          caducidad.month,
+          caducidad.day,
+        );
 
-
-
-
-
+        if (fechaCaducidad.isBefore(fechaActual)) {
+          unidades[i]['estado'] = 'Vencida';
+          cambio = true;
+        }
+      }
+    }
+    if (cambio) {
+      await file.writeAsString(
+        const JsonEncoder.withIndent(' ').convert(unidades),
+      );
+    }
+  }
 }
