@@ -129,4 +129,30 @@ class DonanteRepository {
     final resultado = await guardarDonante(donanteData);
     return resultado['exito'] == true;
   }
+
+  /// Retorna todos los donantes registrados en `donantes.json` como lista de mapas.
+  ///
+  /// va a ser usado por la vista de listado/búsqueda y para precargar datos al editar.
+  static Future<List<Map<String, dynamic>>> obtenerDonantes() async {
+    final datos = await _leerDonantes();
+    return datos.whereType<Map<String, dynamic>>().toList();
+  }
+
+  /// Busca y retorna una copia de los datos de un donante por su [rut].
+  ///
+  /// Retorna `null` si el [rut] está vacío o no existe en `donantes.json`.
+  static Future<Map<String, dynamic>?> buscarDonantePorRut(String rut) async {
+    if (rut.trim().isEmpty) return null;
+    final buscado = normalizarRut(rut);
+    final donantes = await _leerDonantes();
+
+    for (final d in donantes) {
+      if (d is Map<String, dynamic> &&
+          d['rut'] is String &&
+          normalizarRut(d['rut'] as String) == buscado) {
+        return Map<String, dynamic>.from(d);
+      }
+    }
+    return null;
+  }
 }
