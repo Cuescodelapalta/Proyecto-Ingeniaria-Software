@@ -155,4 +155,21 @@ class DonanteRepository {
     }
     return null;
   }
+
+  /// Busca y retorna los donantes cuyo nombre contenga [nombre]
+  /// (insensible a mayúsculas y espacios laterales).
+  ///
+  /// Si [nombre] está vacío, retorna una lista vacía.
+  static Future<List<Map<String, dynamic>>> buscarDonantePorNombre(
+    String nombre,
+  ) async {
+    final texto = nombre.trim().toLowerCase();
+    if (texto.isEmpty) return [];
+
+    final todos = await obtenerDonantes();
+    return todos.where((d) {
+      final nombreDonante = (d['nombre'] ?? '').toString().toLowerCase();
+      return nombreDonante.contains(texto);
+    }).toList();
+  }
 }
