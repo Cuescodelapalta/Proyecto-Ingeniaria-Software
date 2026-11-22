@@ -81,7 +81,7 @@ class DonanteRepository {
         return {'exito': false, 'mensaje': 'El donante debe tener un RUT.'};
       }
 
-      const estadosEvaluacion = {'Apto', 'Diferido', 'Rechazado'};
+      const estadosEvaluacion = {'Apto', 'Diferido', 'Diferido temporalmente', 'Rechazado'};
       final elegibilidad = donante['elegibilidad'];
       if (elegibilidad is! String ||
           !estadosEvaluacion.contains(elegibilidad)) {
@@ -91,8 +91,8 @@ class DonanteRepository {
         };
       }
 
-      // Validación RF-11: Si es diferido temporalmente, debe registrar cuándo podrá volver a donar[cite: 8]
-      if (elegibilidad == 'Diferido') {
+      // Validación RF-11: Si es diferido temporalmente, debe registrar cuándo podrá volver a donar
+      if (elegibilidad == 'Diferido' || elegibilidad == 'Diferido temporalmente') {
         final fechaRetorno = donante['fechaRetorno'];
         if (fechaRetorno == null || (fechaRetorno is String && fechaRetorno.trim().isEmpty)) {
           return {
@@ -171,5 +171,116 @@ class DonanteRepository {
       final nombreDonante = (d['nombre'] ?? '').toString().toLowerCase();
       return nombreDonante.contains(texto);
     }).toList();
+  }
+
+  /// Actualiza los datos editables de un donante existente identificado por [rut].
+  ///
+  /// No cambia el `'rut'` y el `'tipoSangre'` originales.
+  /// Si `'elegibilidad'` cambia a `'Diferido temporalmente'` (o `'Diferido'`),
+  /// exige una fecha de habilitación estrictamente posterior a hoy.
+  ///
+  /// Lanza [StateError] si no existe ningún donante con el [rut] indicado.
+  /// Retorna un mapa con `'exito'` (`bool`) y `'mensaje'` (`String`).
+  static Future< Map< String, Object > > actualizarDonante(
+    String rut,
+    Map< String, dynamic > datosActualizados,
+  ) async {
+    final donantes = await _leerDonantes();
+    final buscado = normalizarRut(rut);
+    final indice = donantes.indexWhere(
+      (d) =>
+          d is Map &&
+          d['rut'] is String &&
+          normalizarRut(d['rut'] as String) == buscado,
+    );
+
+    if (indice == -1) {
+      throw StateError(
+        'No se encontró ningún donante registrado con el RUT $rut.',
+      );
+    }
+
+    const estadosValidos = {
+      'Apto',
+      'Diferido',
+      'Diferido temporalmente',
+      'Rechazado',
+    };
+    final elegibilidad = datosActualizados['elegibilidad'];
+    if (elegibilidad is! String || !estadosValidos.contains(elegibilidad)) {
+      return {
+        'exito': false,
+        'mensaje': 'Estado de elegibilidad no válido.',
+      };
+    }
+
+    final esDiferido =
+        elegibilidad == 'Diferido temporalmente' || elegibilidad == 'Diferido';
+
+    String? fechaHabilitacionFormateada;
+    if (esDiferido) {
+      final rawFecha = datosActualizados['fechaHabilitacion'] ??
+          datosActualizados['fechaRetorno'];
+
+      if (rawFecha == null || (rawFecha is String && rawFecha.trim().isEmpty)) {
+        return {
+          'exito': false,
+          'mensaje':
+              'La fecha de habilitación es obligatoria para un donante diferido temporalmente.',
+        };
+      }
+
+      final parsedFecha = rawFecha is DateTime
+          ? rawFecha
+          : DateTime.tryParse(rawFecha.toString().trim());
+      if (parsedFecha == null) {
+        return {
+          'exito': false,
+          'mensaje': 'El formato de la fecha de habilitación no es válido.',
+        };
+      }
+
+      final ahora = DateTime.now();
+      final hoy = DateTime(ahora.year, ahora.month, ahora.day);
+      final fechaSoloDia =
+          DateTime(parsedFecha.year, parsedFecha.month, parsedFecha.day);
+
+      if (!fechaSoloDia.isAfter(hoy)) {
+        return {
+          'exito': false,
+          'mensaje': 'La fecha de habilitación debe ser futura.',
+        };
+      }
+
+      fechaHabilitacionFormateada =
+          '${fechaSoloDia.year}-${fechaSoloDia.month.toString().padLeft(2, '0')}-${fechaSoloDia.day.toString().padLeft(2, '0')}';
+    }
+
+    final donanteActual = Map< String, dynamic >.from(donantes[indice] as Map);
+
+    final donanteEditado = < String, dynamic >{
+      ...donanteActual,
+      if (datosActualizados['nombre'] != null)
+        'nombre': datosActualizados['nombre'].toString().trim(),
+      if (datosActualizados['fechaNacimiento'] != null)
+        'fechaNacimiento': datosActualizados['fechaNacimiento'].toString().trim(),
+      if (datosActualizados['peso'] != null) 'peso': datosActualizados['peso'],
+      if (datosActualizados['telefono'] != null)
+        'telefono': datosActualizados['telefono'],
+      'elegibilidad': elegibilidad,
+      'fechaRetorno': fechaHabilitacionFormateada,
+      'fechaHabilitacion': fechaHabilitacionFormateada,
+    };
+
+    donantes[indice] = donanteEditado;
+
+    await File(_filePath).writeAsString(
+      const JsonEncoder.withIndent('  ').convert(donantes),
+    );
+
+    return {
+      'exito': true,
+      'mensaje': 'Donante actualizado correctamente.',
+    };
   }
 }
