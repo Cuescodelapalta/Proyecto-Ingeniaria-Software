@@ -128,6 +128,7 @@ class UnidadRepository {
       );
     }
   }
+
   /// calcula dias calendario restantes hasta la fecha de vencimiento.
   static int diasParaVencer(
     String fechaCaducidadStr, {
@@ -159,5 +160,42 @@ class UnidadRepository {
       fechaReferencia: fechaReferencia,
     );
     return diasRestantes >= 0 && diasRestantes <= diasAlerta;
+  }
+  
+  static Future<bool> actualizarEstadoUnidades({
+    required List<int> ids,
+    required String nuevoEstado,
+  }) async {
+    try {
+      if (ids.isEmpty) {
+        return false;
+      }
+      final file = File(_filePath);
+      if (!await file.exists()) {
+        return false;
+      }
+      final String contenido = await file.readAsString();
+      if (contenido.trim().isEmpty) {
+        return false;
+      }
+      final List<dynamic> unidades = jsonDecode(contenido);
+
+      final idSolicitados = ids.toSet();
+      final idsExistentes = unidades.map((u) => u['id']).toSet();
+      if (!idsExistentes.containsAll(idSolicitados)) {
+        return false;
+      }
+      for (int i = 0; i < unidades.length; i++) {
+        if (idSolicitados.contains(unidades[i]['id'])) {
+          unidades[i]['estado'] = nuevoEstado;
+        }
+      }
+      await file.writeAsString(
+        const JsonEncoder.withIndent(' ').convert(unidades),
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }
