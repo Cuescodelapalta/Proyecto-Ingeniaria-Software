@@ -59,6 +59,14 @@ class DonanteRepository {
     return datos;
   }
 
+  static Future<List<Map<String, dynamic>>> listarDonantes() async {
+    final donantes = await _leerDonantes();
+    return donantes
+        .whereType<Map>()
+        .map((donante) => Map<String, dynamic>.from(donante))
+        .toList();
+  }
+
   static bool _contieneRut(List<dynamic> donantes, String rut) {
     final buscado = normalizarRut(rut);
     return donantes.any((d) =>

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:m_a_d_/registro_unidades_screen.dart';
 import 'package:m_a_d_/inventario_unidades_screen.dart';
 import 'package:m_a_d_/registro_donantes_screen.dart';
+import 'package:m_a_d_/lista_donantes_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key}); 
@@ -46,6 +47,20 @@ class HomeScreen extends StatelessWidget {
                 },
                 icon: const Icon(Icons.add_circle_outline),
                 label: const Text('Registrar nueva unidad'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ListaDonantesScreen()),
+                  );
+                },
+                icon: const Icon(Icons.people_outline),
+                label: const Text('Lista de donantes'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
