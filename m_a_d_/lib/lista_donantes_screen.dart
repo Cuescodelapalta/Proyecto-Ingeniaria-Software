@@ -21,6 +21,68 @@ class _ListaDonantesScreenState extends State<ListaDonantesScreen> {
     _donantesFuture = DonanteRepository.listarDonantes();
   }
 
+  void _mostrarDetalleDonante(
+    BuildContext context,
+    Map<String, dynamic> donante,
+  ) {
+    final nombre = (donante['nombre'] ?? '').toString().trim();
+    final detalles = <MapEntry<String, String>>[
+      MapEntry('RUT', _valorDetalle(donante['rut'])),
+      MapEntry(
+        'Fecha de nacimiento',
+        _valorDetalle(donante['fechaNacimiento']),
+      ),
+      MapEntry('Peso', '${_valorDetalle(donante['peso'])} kg'),
+      MapEntry(
+        'Tipo de sangre',
+        _valorDetalle(donante['tipoSangre'] ?? donante['tipo_sangre']),
+      ),
+      MapEntry('Teléfono', _valorDetalle(donante['telefono'])),
+      MapEntry('Elegibilidad', _valorDetalle(donante['elegibilidad'])),
+      MapEntry(
+        'Fecha de retorno',
+        _valorDetalle(donante['fechaRetorno'], valorVacio: 'No aplica'),
+      ),
+    ];
+
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(nombre.isEmpty ? 'Detalle del donante' : nombre),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final detalle in detalles) ...[
+                Text(
+                  detalle.key,
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+                Text(
+                  detalle.value,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 12),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _valorDetalle(dynamic valor, {String valorVacio = 'No registrado'}) {
+    final texto = valor?.toString().trim() ?? '';
+    return texto.isEmpty ? valorVacio : texto;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,6 +143,7 @@ class _ListaDonantesScreenState extends State<ListaDonantesScreen> {
                   ),
                   title: Text(nombre.isEmpty ? 'Sin nombre' : nombre),
                   subtitle: Text('RUT: ${rut.isEmpty ? 'Sin RUT' : rut}'),
+                  onTap: () => _mostrarDetalleDonante(context, donante),
                 ),
               );
             },
