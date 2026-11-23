@@ -1,7 +1,7 @@
 import 'package:m_a_d_/repositories/unidad_repository.dart';
 
 class DespachoService {
-  static Future<List<Map<String,dynamic>>> obtenerUnidadesElegibles({
+  static Future<List<Map<String, dynamic>>> obtenerUnidadesElegibles({
     required String sede,
     required String tipoSangre,
   }) async {
@@ -22,5 +22,23 @@ class DespachoService {
       return fechaA.compareTo(fechaB);
     });
     return elegibles;
+  }
+
+  static Future<List<Map<String, dynamic>>> sugerirUnidadesFEFO({
+    required String sede,
+    required String tipoSangre,
+    required int cantidad,
+  }) async {
+    if (cantidad <= 0) {
+      throw Exception('La cantidad debe ser mayor a 0');
+    }
+    final elegibles = await obtenerUnidadesElegibles(
+      sede: sede,
+      tipoSangre: tipoSangre,
+    );
+    if (elegibles.length < cantidad) {
+      throw Exception('El stock disponible no es suficiente');
+    }
+    return elegibles.take(cantidad).toList();
   }
 }
