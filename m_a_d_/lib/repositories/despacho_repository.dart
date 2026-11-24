@@ -9,6 +9,15 @@ class DespachoRepository {
 
   /// Agrega una orden al archivo; el ID debe ser único.
   static Future<void> guardarOrden(OrdenDespacho orden) async {
+    if (orden.sedeOrigen.trim().isEmpty ||
+        orden.centroMedicoDestino.trim().isEmpty ||
+        orden.unidadesIds.isEmpty) {
+      throw ArgumentError(
+        'La orden de despacho está incompleta: debe incluir sede de origen, '
+        'destino y al menos una unidad.',
+      );
+    }
+
     final ordenes = await _leerOrdenes();
     if (ordenes.any((actual) => actual.id == orden.id)) {
       throw StateError('Ya existe una orden de despacho con ID ${orden.id}.');
