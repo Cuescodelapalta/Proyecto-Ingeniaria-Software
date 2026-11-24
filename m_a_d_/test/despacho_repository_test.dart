@@ -18,12 +18,18 @@ void main() {
     if (await file.exists()) await file.delete();
   });
 
-  OrdenDespacho crearOrden(int id) => OrdenDespacho(
+  OrdenDespacho crearOrden(
+    int id, {
+    DateTime? fechaSolicitud,
+    String sedeOrigen = 'Sede Central',
+    String centroMedicoDestino = 'Hospital Regional',
+    List<int> unidadesIds = const [12, 15],
+  }) => OrdenDespacho(
     id: id,
-    fechaSolicitud: DateTime(2026, 11, 24, 16, 30),
-    sedeOrigen: 'Sede Central',
-    centroMedicoDestino: 'Hospital Regional',
-    unidadesIds: [12, 15],
+    fechaSolicitud: fechaSolicitud ?? DateTime(2026, 11, 24, 16, 30),
+    sedeOrigen: sedeOrigen,
+    centroMedicoDestino: centroMedicoDestino,
+    unidadesIds: unidadesIds,
   );
 
   group('DespachoRepository', () {
@@ -36,6 +42,10 @@ void main() {
       );
       expect(datos, hasLength(1));
       expect(datos.single['estado'], 'Pendiente');
+      expect(
+        datos.single['fecha_solicitud'],
+        orden.fechaSolicitud.toIso8601String(),
+      );
       expect(datos.single['unidades_ids'], [12, 15]);
 
       final ordenes = await DespachoRepository.obtenerOrdenes();
@@ -64,6 +74,59 @@ void main() {
 
     test('devuelve una lista vacía si el archivo aún no existe', () async {
       expect(await DespachoRepository.obtenerOrdenes(), isEmpty);
+    });
+
+    test('recupera múltiples órdenes con todos sus datos íntegros', () async {
+      final primeraOrden = crearOrden(
+        3,
+        fechaSolicitud: DateTime(2026, 11, 20, 9, 15),
+        sedeOrigen: 'Sede Norte',
+        centroMedicoDestino: 'Hospital A',
+        unidadesIds: [8, 4, 17],
+      );
+      final segundaOrden = crearOrden(
+        4,
+        fechaSolicitud: DateTime(2026, 11, 21, 14, 45),
+        sedeOrigen: 'Sede Sur',
+        centroMedicoDestino: 'Hospital B',
+        unidadesIds: [21],
+      );
+      await DespachoRepository.guardarOrden(primeraOrden);
+      await DespachoRepository.guardarOrden(segundaOrden);
+
+      final recuperadas = await DespachoRepository.obtenerOrdenes();
+
+      expect(recuperadas, hasLength(2));
+      expect(recuperadas.map((orden) => orden.toJson()).toList(), [
+        primeraOrden.toJson(),
+        segundaOrden.toJson(),
+      ]);
+    });
+
+    test('rechaza órdenes sin sede, destino o unidades asociadas', () async {
+      await DespachoRepository.guardarOrden(crearOrden(1));
+      final ordenesIncompletas = [
+        crearOrden(2, sedeOrigen: ''),
+        crearOrden(3, centroMedicoDestino: '  '),
+        crearOrden(4, unidadesIds: const []),
+      ];
+
+      for (final orden in ordenesIncompletas) {
+        await expectLater(
+          DespachoRepository.guardarOrden(orden),
+          throwsA(
+            isA<ArgumentError>().having(
+              (error) => error.message,
+              'message',
+              contains('incompleta'),
+            ),
+          ),
+        );
+      }
+
+      final guardadas = await DespachoRepository.obtenerOrdenes();
+      expect(guardadas, hasLength(1));
+      expect(guardadas.single.id, 1);
     });
   });
 }
