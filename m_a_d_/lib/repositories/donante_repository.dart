@@ -227,8 +227,8 @@ class DonanteRepository {
     String? fechaHabilitacionFormateada;
     if (esDiferido) {
       final rawFecha =
-          datosActualizados['fechaHabilitacion'] ??
-          datosActualizados['fechaRetorno'];
+          datosActualizados['fechaRetorno'] ??
+          datosActualizados['fechaHabilitacion'];
 
       if (rawFecha == null || (rawFecha is String && rawFecha.trim().isEmpty)) {
         return {
@@ -281,7 +281,6 @@ class DonanteRepository {
         'telefono': datosActualizados['telefono'],
       'elegibilidad': elegibilidad,
       'fechaRetorno': fechaHabilitacionFormateada,
-      'fechaHabilitacion': fechaHabilitacionFormateada,
     };
 
     donantes[indice] = donanteEditado;
