@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:m_a_d_/repositories/donante_repository.dart';
+import 'package:m_a_d_/registro_donantes_screen.dart';
 
 class ListaDonantesScreen extends StatefulWidget {
   const ListaDonantesScreen({super.key});
@@ -10,6 +11,7 @@ class ListaDonantesScreen extends StatefulWidget {
 
 class _ListaDonantesScreenState extends State<ListaDonantesScreen> {
   late Future<List<Map<String, dynamic>>> _donantesFuture;
+  String _filtroRut = '';
 
   @override
   void initState() {
@@ -83,6 +85,13 @@ class _ListaDonantesScreenState extends State<ListaDonantesScreen> {
     return texto.isEmpty ? valorVacio : texto;
   }
 
+  void _irARegistroDonante() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const RegistroDonanteScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -121,32 +130,89 @@ class _ListaDonantesScreenState extends State<ListaDonantesScreen> {
           }
 
           final donantes = snapshot.data ?? [];
-          if (donantes.isEmpty) {
-            return const Center(
-              child: Text('Aún no hay donantes registrados.'),
+          final rutBuscado = DonanteRepository.normalizarRut(_filtroRut);
+          final donantesFiltrados = donantes.where((donante) {
+            final rutDonante = DonanteRepository.normalizarRut(
+              (donante['rut'] ?? '').toString(),
             );
-          }
+            return rutDonante.contains(rutBuscado);
+          }).toList();
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: donantes.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final donante = donantes[index];
-              final nombre = (donante['nombre'] ?? '').toString().trim();
-              final rut = (donante['rut'] ?? '').toString().trim();
-
-              return Card(
-                child: ListTile(
-                  leading: const CircleAvatar(
-                    child: Icon(Icons.person_outline),
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: TextField(
+                  decoration: InputDecoration(
+                    labelText: 'Buscar por RUT',
+                    hintText: 'Ingresa el RUT del donante',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _filtroRut.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'Limpiar búsqueda',
+                            onPressed: () => setState(() => _filtroRut = ''),
+                            icon: const Icon(Icons.clear),
+                          ),
+                    border: const OutlineInputBorder(),
                   ),
-                  title: Text(nombre.isEmpty ? 'Sin nombre' : nombre),
-                  subtitle: Text('RUT: ${rut.isEmpty ? 'Sin RUT' : rut}'),
-                  onTap: () => _mostrarDetalleDonante(context, donante),
+                  onChanged: (valor) => setState(() => _filtroRut = valor),
                 ),
-              );
-            },
+              ),
+              Expanded(
+                child: donantesFiltrados.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                donantes.isEmpty
+                                    ? 'Aún no hay donantes registrados.'
+                                    : 'No se encontraron donantes para ese RUT.',
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton.icon(
+                                onPressed: _irARegistroDonante,
+                                icon: const Icon(Icons.person_add_outlined),
+                                label: const Text('Registrar donante'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: donantesFiltrados.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final donante = donantesFiltrados[index];
+                          final nombre = (donante['nombre'] ?? '')
+                              .toString()
+                              .trim();
+                          final rut = (donante['rut'] ?? '').toString().trim();
+
+                          return Card(
+                            child: ListTile(
+                              leading: const CircleAvatar(
+                                child: Icon(Icons.person_outline),
+                              ),
+                              title: Text(
+                                nombre.isEmpty ? 'Sin nombre' : nombre,
+                              ),
+                              subtitle: Text(
+                                'RUT: ${rut.isEmpty ? 'Sin RUT' : rut}',
+                              ),
+                              onTap: () =>
+                                  _mostrarDetalleDonante(context, donante),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
           );
         },
       ),
