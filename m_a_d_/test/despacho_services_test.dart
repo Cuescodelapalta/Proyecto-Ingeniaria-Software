@@ -3,24 +3,35 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m_a_d_/despacho_services.dart';
+import 'package:m_a_d_/repositories/unidad_repository.dart';
+import 'package:m_a_d_/repositories/despacho_repository.dart';
 
 void main() {
   const String testFilepath = 'unidades.json';
+  const String testOrdenesPath = 'ordenes_despacho.json';
 
   setUp(() async {
     final file = File(testFilepath);
+    final ordenesFile = File(testOrdenesPath);
     try {
       if (await file.exists()) {
         await file.writeAsString('[]');
+      }
+      if (await ordenesFile.exists()) {
+        await ordenesFile.writeAsString('[]');
       }
     } catch (_) {}
   });
 
   tearDown(() async {
     final file = File(testFilepath);
+    final ordenesFile = File(testOrdenesPath);
     try {
       if (await file.exists()) {
         await file.delete();
+      }
+      if (await ordenesFile.exists()) {
+        await ordenesFile.delete();
       }
     } catch (_) {}
   });
@@ -135,6 +146,67 @@ void main() {
 
       expect(elegibles.length, 1);
       expect(elegibles.first['id'], 5);
+    });
+
+    test('Test 3: ejecutarDespacho guarda la orden y actualiza solo las unidades despachadas', () async {
+      final unidadesPrueba = [
+        {
+          'id': 1,
+          'rut_donante': '111111111',
+          'tipo_sangre': 'O+',
+          'estado': 'Disponible',
+          'fecha_caducidad': '2027-01-10',
+          'fecha_extraccion': '2026-11-29',
+          'volumen': 450,
+          'sede': 'Concepción',
+        },
+        {
+          'id': 2,
+          'rut_donante': '222222222',
+          'tipo_sangre': 'O+',
+          'estado': 'Disponible',
+          'fecha_caducidad': '2027-01-12',
+          'fecha_extraccion': '2026-12-01',
+          'volumen': 450,
+          'sede': 'Concepción',
+        },
+        {
+          'id': 3,
+          'rut_donante': '333333333',
+          'tipo_sangre': 'O+',
+          'estado': 'Disponible',
+          'fecha_caducidad': '2027-01-15',
+          'fecha_extraccion': '2026-12-04',
+          'volumen': 450,
+          'sede': 'Talcahuano',
+        },
+      ];
+      await File(testFilepath).writeAsString(jsonEncode(unidadesPrueba));
+
+      final orden = await DespachoService.ejecutarDespacho(
+        sede: 'Concepción',
+        destino: 'Hospital Regional',
+        unidadesIds: [1, 2],
+      );
+
+      expect(orden.id, 1);
+      expect(orden.estado, 'Pendiente');
+      expect(orden.sedeOrigen,'Concepción');
+      expect(orden.centroMedicoDestino, 'Hospital Regional');
+      expect(orden.unidadesIds, [1,2]);
+
+      final ordenesGuardadas=await DespachoRepository.obtenerOrdenes();
+      expect(ordenesGuardadas.length, 1);
+      expect(ordenesGuardadas.first.id, 1);
+
+      final unidadesActualizadas= await UnidadRepository.obtenerUnidades();
+      final u1=unidadesActualizadas.firstWhere((u)=>u['id']==1);
+      final u2=unidadesActualizadas.firstWhere((u)=>u['id']==2);
+      final u3=unidadesActualizadas.firstWhere((u)=>u['id']==3);
+
+      expect(u1['estado'], 'Despachado/a');
+      expect(u2['estado'], 'Despachado/a');
+      expect(u3['estado'], 'Disponible');
     });
 
     test('Test 4: sugerirUnidadesFEFO lanza excepción con stock insuficiente o cantidad invalida', () async {
