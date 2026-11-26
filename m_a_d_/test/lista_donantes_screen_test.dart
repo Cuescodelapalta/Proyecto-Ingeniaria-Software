@@ -98,4 +98,71 @@ void main() {
     expect(find.text('Elegibilidad'), findsOneWidget);
     expect(find.text('Apto'), findsOneWidget);
   });
+
+  testWidgets('filtra donantes en vivo por RUT ignorando puntos y guion', (
+    tester,
+  ) async {
+    await tester.runAsync(
+      () => file.writeAsString(
+        jsonEncode([
+          {'nombre': 'Ana Pérez', 'rut': '12.345.678-5'},
+          {'nombre': 'Luis Soto', 'rut': '98.765.432-1'},
+        ]),
+      ),
+    );
+
+    await tester.pumpWidget(const MaterialApp(home: ListaDonantesScreen()));
+
+    var intentos = 0;
+    while (tester.any(find.byType(CircularProgressIndicator)) &&
+        intentos < 50) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump();
+      intentos++;
+    }
+
+    await tester.enterText(find.byType(TextField), '12345678');
+    await tester.pump();
+
+    expect(find.text('Ana Pérez'), findsOneWidget);
+    expect(find.text('Luis Soto'), findsNothing);
+  });
+
+  testWidgets('muestra opción de registro cuando el RUT no coincide', (
+    tester,
+  ) async {
+    await tester.runAsync(
+      () => file.writeAsString(
+        jsonEncode([
+          {'nombre': 'Ana Pérez', 'rut': '123456785'},
+        ]),
+      ),
+    );
+
+    await tester.pumpWidget(const MaterialApp(home: ListaDonantesScreen()));
+
+    var intentos = 0;
+    while (tester.any(find.byType(CircularProgressIndicator)) &&
+        intentos < 50) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump();
+      intentos++;
+    }
+
+    await tester.enterText(find.byType(TextField), '999999999');
+    await tester.pump();
+
+    expect(
+      find.text('No se encontraron donantes para ese RUT.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Registrar donante'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Registrar nuevo donante'), findsOneWidget);
+  });
 }
