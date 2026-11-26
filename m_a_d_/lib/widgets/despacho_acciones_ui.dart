@@ -79,15 +79,81 @@ class _ModalEditarDestinoDialogState extends State<_ModalEditarDestinoDialog> {
     );
   }
 }
+Future<bool> mostrarDialogoCancelarOrden(
+  BuildContext context, {
+  required dynamic idOrden,
+}) async {
+  final confirmado = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Cancelar orden de despacho'),
+      content: Text(
+        '¿Confirmas cancelar la orden #$idOrden? Las unidades vinculadas volverán a estado "Disponible".',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Volver'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red.shade700,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: const Text('Confirmar cancelación'),
+        ),
+      ],
+    ),
+  );
+  return confirmado ?? false;
+}
+
+/// Diálogo de confirmación para marcar salida física a "En ruta" (Tarea 6.3 - Parte 2).
+Future<bool> mostrarDialogoMarcarEnRuta(
+  BuildContext context, {
+  required dynamic idOrden,
+}) async {
+  final confirmado = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Confirmar salida a ruta'),
+      content: Text(
+        '¿Confirmas la salida de la orden #$idOrden a "En ruta"? Una vez en ruta no podrá editarse ni cancelarse.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green.shade700,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: const Text('Confirmar salida'),
+        ),
+      ],
+    ),
+  );
+  return confirmado ?? false;
+}
 
 class TarjetaDespachoInteractiva extends StatefulWidget {
   final Map<String, dynamic> ordenInicial;
   final Future<bool> Function(dynamic id, String nuevoDestino)? onGuardarDestino;
+  final Future<bool> Function(dynamic id)? onCancelarOrden;
+  final Future<bool> Function(dynamic id)? onMarcarEnRuta;
 
   const TarjetaDespachoInteractiva({
     super.key,
     required this.ordenInicial,
     this.onGuardarDestino,
+    this.onCancelarOrden,
+    this.onMarcarEnRuta,
   });
 
   @override
@@ -105,6 +171,16 @@ class _TarjetaDespachoInteractivaState
     _orden = Map<String, dynamic>.from(widget.ordenInicial);
   }
 
+  void _mostrarNotificacion(String mensaje) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensaje),
+        backgroundColor: Colors.green.shade700,
+      ),
+    );
+  }
+
   Future<void> _manejarEdicion() async {
     final nuevoDestino = await mostrarModalEditarDestino(
       context,
@@ -120,12 +196,45 @@ class _TarjetaDespachoInteractivaState
       setState(() {
         _orden['hospital_destino'] = nuevoDestino;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Destino del despacho actualizado correctamente.'),
-          backgroundColor: Colors.green.shade700,
-        ),
-      );
+      _mostrarNotificacion('Destino del despacho actualizado correctamente.');
+    }
+  }
+
+  Future<void> _manejarCancelacion() async {
+    final confirmado = await mostrarDialogoCancelarOrden(
+      context,
+      idOrden: _orden['id'],
+    );
+    if (!confirmado) return;
+
+    final ok = widget.onCancelarOrden != null
+        ? await widget.onCancelarOrden!(_orden['id'])
+        : true;
+
+    if (ok && mounted) {
+      setState(() {
+        _orden['estado'] = 'Cancelada';
+      });
+      _mostrarNotificacion('Orden cancelada y unidades liberadas al inventario.');
+    }
+  }
+
+  Future<void> _manejarSalidaEnRuta() async {
+    final confirmado = await mostrarDialogoMarcarEnRuta(
+      context,
+      idOrden: _orden['id'],
+    );
+    if (!confirmado) return;
+
+    final ok = widget.onMarcarEnRuta != null
+        ? await widget.onMarcarEnRuta!(_orden['id'])
+        : true;
+
+    if (ok && mounted) {
+      setState(() {
+        _orden['estado'] = 'En ruta';
+      });
+      _mostrarNotificacion('Despacho marcado como "En ruta".');
     }
   }
 
@@ -160,10 +269,26 @@ class _TarjetaDespachoInteractivaState
             ),
             if (esPendiente) ...[
               const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _manejarEdicion,
-                icon: const Icon(Icons.edit),
-                label: const Text('Editar destino'),
+              Wrap(
+                spacing : 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _manejarEdicion,
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Editar destino'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _manejarCancelacion,
+                    icon: const Icon(Icons.cancel_outlined),
+                    label: const Text('Cancelar orden'),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _manejarSalidaEnRuta,
+                    icon: const Icon(Icons.local_shipping),
+                    label: const Text('En ruta'),
+                  ),
+                ],
               ),
             ],
           ],
