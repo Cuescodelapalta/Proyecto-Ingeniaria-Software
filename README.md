@@ -4,7 +4,7 @@
 
 # Integrantes:
 ## Alonso Vergara
-## Alonso Toleto
+## Alonso Toledo
 ## Gabriel Espinosa
 ## Joaquin Torres
 ## Matias Cabello
