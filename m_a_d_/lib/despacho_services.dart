@@ -2,13 +2,17 @@ import 'package:m_a_d_/repositories/despacho_repository.dart';
 import 'package:m_a_d_/repositories/unidad_repository.dart';
 import 'package:m_a_d_/orden_despacho.dart';
 
+/// Servicio encargado de la lógica de despacho de unidades de sangre,
+/// aplicando el criterio FEFO y validando la disponibilidad del inventario.
 class DespachoService {
+  /// Retorna las unidades en estado 'Disponible' que coinciden con la sede [sede] y el
+  /// [tipoSangre] indicados, ordenadas por fecha de caducidad ascendente.
   static Future<List<Map<String, dynamic>>> obtenerUnidadesElegibles({
     required String sede,
     required String tipoSangre,
   }) async {
     final inventario = await UnidadRepository.obtenerUnidades();
-
+    // Filtra unidades disponibles que coincidan con la sede y el tipo de sangre.
     final elegibles = inventario.where((u) {
       final mismaSede =
           (u['sede'] ?? '').toString().trim().toLowerCase() ==
@@ -26,6 +30,8 @@ class DespachoService {
     return elegibles;
   }
 
+  /// Sugiere la [cantidad] solicitada de unidades elegibles priorizando las
+  /// más próximas a vencer (FEFO)
   static Future<List<Map<String, dynamic>>> sugerirUnidadesFEFO({
     required String sede,
     required String tipoSangre,
@@ -44,6 +50,10 @@ class DespachoService {
     return elegibles.take(cantidad).toList();
   }
 
+  /// Ejecuta un despacho validando los datos de entrada y el inventario,
+  /// actualiza el estado de las unidades a 'Despachado' y registra la [OrdenDespacho] resultante.
+  ///
+  /// Si ocurre un error al guardar la orden, devuelve el estado de las unidades a 'Disponible'.
   static Future<OrdenDespacho> ejecutarDespacho({
     required String sede,
     required String destino,
@@ -62,6 +72,7 @@ class DespachoService {
     if (unidadesIds.length != unidadesIds.toSet().length) {
       throw Exception('No se puede seleccionar más de una vez la misma unidad');
     }
+    // Verifica que todas las unidades existan, esten disponibles y pertenezcan a la sede.
     final inventario = await UnidadRepository.obtenerUnidades();
     for (final id in unidadesIds) {
       final encontradas = inventario.where((u) => u['id'] == id).toList();
@@ -95,6 +106,7 @@ class DespachoService {
     if (!resultado) {
       throw Exception('No se pudo cambiar el estado de las unidades');
     }
+    // Si la orden llega a fallar se revierte el estado de las unidades.
     try {
       await DespachoRepository.guardarOrden(nuevaOrden);
     } catch (e) {

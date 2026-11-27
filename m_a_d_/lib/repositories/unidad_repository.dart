@@ -162,6 +162,10 @@ class UnidadRepository {
     return diasRestantes >= 0 && diasRestantes <= diasAlerta;
   }
   
+  /// Cambia el estado de las unidades indicadas en [ids] a [nuevoEstado] en 'unidades.json'.
+  /// 
+  /// Retorna 'true' si la actualización se guardo correctamente o 'false' si la 
+  /// lista está vacía, el archivo no existe o no se encuentra algun ID.
   static Future<bool> actualizarEstadoUnidades({
     required List<int> ids,
     required String nuevoEstado,
