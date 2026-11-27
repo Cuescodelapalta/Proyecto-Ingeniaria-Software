@@ -90,7 +90,7 @@ class DespachoService {
     );
     final resultado = await UnidadRepository.actualizarEstadoUnidades(
       ids: unidadesIds,
-      nuevoEstado: 'Despachado/a',
+      nuevoEstado: 'Despachado',
     );
     if (!resultado) {
       throw Exception('No se pudo cambiar el estado de las unidades');

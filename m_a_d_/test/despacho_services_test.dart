@@ -204,8 +204,8 @@ void main() {
       final u2=unidadesActualizadas.firstWhere((u)=>u['id']==2);
       final u3=unidadesActualizadas.firstWhere((u)=>u['id']==3);
 
-      expect(u1['estado'], 'Despachado/a');
-      expect(u2['estado'], 'Despachado/a');
+      expect(u1['estado'], 'Despachado');
+      expect(u2['estado'], 'Despachado');
       expect(u3['estado'], 'Disponible');
     });
 
