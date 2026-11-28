@@ -21,7 +21,11 @@ void main() {
 
   // Las unidades 1 y 2 pertenecen a la orden y la 3 es de otra.
   Future<void> crearUnidadesDespachadas() async {
-    await File(unidadesPath).writeAsString(jsonEncode([for (final id in [1, 2, 3]) {'id': id, 'estado': 'Despachado'}]));
+    await File(unidadesPath).writeAsString(
+      jsonEncode([
+        for (final id in [1, 2, 3]) {'id': id, 'estado': 'Despachado'},
+      ]),
+    );
   }
 
   // Se usa la hora actual para que la orden este dentro de la ventana.
@@ -39,11 +43,18 @@ void main() {
   }
 
   Future<Map<int, String>> estadosUnidades() async {
-    final lista = jsonDecode(await File(unidadesPath).readAsString()) as List<dynamic>;
+    final lista =
+        jsonDecode(await File(unidadesPath).readAsString()) as List<dynamic>;
     return {for (final u in lista) u['id'] as int: u['estado'] as String};
   }
 
-  Matcher lanzaNoModificableEnRuta() => throwsA(isA<DespachoNoModificableException>().having((e) => e.mensaje,'mensaje', contains('en ruta')));
+  Matcher lanzaNoModificableEnRuta() => throwsA(
+    isA<DespachoNoModificableException>().having(
+      (e) => e.mensaje,
+      'mensaje',
+      contains('en ruta'),
+    ),
+  );
 
   group('DespachoRepository - Task 6.1', () {
     test('se actualiza el destino de una orden "Pendiente" y mantiene las unidades despachadas', () async {
@@ -54,7 +65,11 @@ void main() {
       final orden = await DespachoRepository.obtenerOrdenPorId(1);
       expect(orden!.centroMedicoDestino, 'Hospital 1');
       expect(orden.estado, 'Pendiente');
-      expect(await estadosUnidades(), {1: 'Despachado', 2: 'Despachado', 3: 'Despachado'});
+      expect(await estadosUnidades(), {
+        1: 'Despachado',
+        2: 'Despachado',
+        3: 'Despachado',
+      });
     });
 
     test('rechaza un destino vacio', () async {
@@ -72,7 +87,11 @@ void main() {
 
       final orden = await DespachoRepository.obtenerOrdenPorId(1);
       expect(orden!.estado, 'Cancelada');
-      expect(await estadosUnidades(), {1: 'Disponible', 2: 'Disponible', 3: 'Despachado'}); // la 3 no pertence a la orden por lo tanto sigue despachada.
+      expect(await estadosUnidades(), {
+        1: 'Disponible',
+        2: 'Disponible',
+        3: 'Despachado',
+      }); // la 3 no pertence a la orden por lo tanto sigue despachada.
     });
 
     test('la confirmacion manual pasa la orden a "En ruta"', () async {
@@ -83,27 +102,48 @@ void main() {
       expect(orden!.estado, 'En ruta');
     });
 
-    test('al expirar la ventana de preparacion la orden pasa a "En ruta"', () async {
-      await crearOrdenPendiente();
-      final orden = await DespachoRepository.obtenerOrdenPorId(1);
+    test(
+      'al expirar la ventana de preparacion la orden pasa a "En ruta"',
+      () async {
+        await crearOrdenPendiente();
+        final orden = await DespachoRepository.obtenerOrdenPorId(1);
 
-      // Dentro de la ventana: no cambia nada.
-      final antes = await DespachoRepository.transicionarOrdenesVencidas(ahora: orden!.fechaSolicitud.add(const Duration(minutes: 5)));
-      expect(antes, 0);
-      expect((await DespachoRepository.obtenerOrdenPorId(1))!.estado, 'Pendiente');
+        // Dentro de la ventana: no cambia nada.
+        final antes = await DespachoRepository.transicionarOrdenesVencidas(
+          ahora: orden!.fechaSolicitud.add(const Duration(minutes: 5)),
+        );
+        expect(antes, 0);
+        expect(
+          (await DespachoRepository.obtenerOrdenPorId(1))!.estado,
+          'Pendiente',
+        );
 
-      // Pasada la ventana: cambia a En ruta.
-      final despues = await DespachoRepository.transicionarOrdenesVencidas(ahora: orden.fechaSolicitud.add(DespachoRepository.ventanaPreparacion + const Duration(minutes: 1)));
-      expect(despues, 1);
-      expect((await DespachoRepository.obtenerOrdenPorId(1))!.estado, 'En ruta');
-    });
+        // Pasada la ventana: cambia a En ruta.
+        final despues = await DespachoRepository.transicionarOrdenesVencidas(
+          ahora: orden.fechaSolicitud.add(
+            DespachoRepository.ventanaPreparacion + const Duration(minutes: 1),
+          ),
+        );
+        expect(despues, 1);
+        expect(
+          (await DespachoRepository.obtenerOrdenPorId(1))!.estado,
+          'En ruta',
+        );
+      },
+    );
 
     test('una orden "En ruta" no se puede editar ni cancelar', () async {
       await crearOrdenPendiente();
       await DespachoRepository.confirmarSalida(1);
 
-      await expectLater(DespachoRepository.actualizarDestino(1, 'Otro Hospital'),lanzaNoModificableEnRuta());
-      await expectLater(DespachoRepository.cancelarOrden(1),lanzaNoModificableEnRuta());
+      await expectLater(
+        DespachoRepository.actualizarDestino(1, 'Otro Hospital'),
+        lanzaNoModificableEnRuta(),
+      );
+      await expectLater(
+        DespachoRepository.cancelarOrden(1),
+        lanzaNoModificableEnRuta(),
+      );
 
       final orden = await DespachoRepository.obtenerOrdenPorId(1);
       expect(orden!.centroMedicoDestino, 'Hospital Regional');
@@ -115,8 +155,14 @@ void main() {
       await crearOrdenPendiente();
       await DespachoRepository.cancelarOrden(1);
 
-      await expectLater(DespachoRepository.actualizarDestino(1, 'Otro Hospital'), throwsA(isA<DespachoNoModificableException>()));
-      await expectLater(DespachoRepository.confirmarSalida(1), throwsA(isA<DespachoNoModificableException>()));
+      await expectLater(
+        DespachoRepository.actualizarDestino(1, 'Otro Hospital'),
+        throwsA(isA<DespachoNoModificableException>()),
+      );
+      await expectLater(
+        DespachoRepository.confirmarSalida(1),
+        throwsA(isA<DespachoNoModificableException>()),
+      );
     });
 
     test('falla si la orden no existe', () async {

@@ -7,6 +7,7 @@ import 'package:m_a_d_/orden_despacho.dart';
 class DespachoRepository {
   static const String _filePath = 'ordenes_despacho.json';
   static const String _unidadesPath = 'unidades.json';
+
   /// Tiempo que una orden puede estar "Pendiente" antes de pasar a "En ruta"
   static const Duration ventanaPreparacion = Duration(minutes: 15);
 
@@ -69,12 +70,17 @@ class DespachoRepository {
   }
 
   static Future<void> _escribirOrdenes(List<OrdenDespacho> ordenes) async {
-    final contenido = const JsonEncoder.withIndent('  ').convert(ordenes.map((actual) => actual.toJson()).toList());
+    final contenido = const JsonEncoder.withIndent('  ')
+        .convert(ordenes.map((actual) => actual.toJson()).toList());
     await File(_filePath).writeAsString(contenido);
   }
 
   /// Copia de la orden con los campos indicados cambiados.
-  static OrdenDespacho _copiar(OrdenDespacho orden, {String ? centroMedicoDestino, String ? estado}) {
+  static OrdenDespacho _copiar(
+    OrdenDespacho orden, {
+    String? centroMedicoDestino,
+    String? estado,
+  }) {
     return OrdenDespacho(
       id: orden.id,
       fechaSolicitud: orden.fechaSolicitud,
@@ -93,7 +99,9 @@ class DespachoRepository {
     var cambios = 0;
     for (var i = 0; i < ordenes.length; i++) {
       final orden = ordenes[i];
-      final vencida = !referencia.isBefore(orden.fechaSolicitud.add(ventanaPreparacion));
+      final vencida = !referencia.isBefore(
+        orden.fechaSolicitud.add(ventanaPreparacion),
+      );
 
       if (orden.estado == 'Pendiente' && vencida) {
         ordenes[i] = _copiar(orden, estado: 'En ruta');
@@ -115,7 +123,9 @@ class DespachoRepository {
 
     final dynamic datos = jsonDecode(contenido);
     if (datos is! List) {
-      throw const FormatException('unidades.json debe contener una lista valida.');
+      throw const FormatException(
+        'unidades.json debe contener una lista valida.',
+      );
     }
 
     for (final unidad in datos) {
@@ -164,7 +174,10 @@ class DespachoRepository {
 
   /// Cambia el centro medico de destino de una orden "Pendiente" y
   /// lanza DespachoNoModificableException si la orden está "En ruta" o "Cancelada".
-  static Future<void> actualizarDestino(int idOrden, String nuevoDestino) async {
+  static Future<void> actualizarDestino(
+    int idOrden,
+    String nuevoDestino,
+  ) async {
     if (nuevoDestino.trim().isEmpty) {
       throw ArgumentError('El centro medico de destino no puede estar vacio.');
     }
