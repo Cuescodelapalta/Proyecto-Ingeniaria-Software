@@ -191,18 +191,18 @@ void main() {
 
       expect(orden.id, 1);
       expect(orden.estado, 'Pendiente');
-      expect(orden.sedeOrigen,'Concepción');
+      expect(orden.sedeOrigen, 'Concepción');
       expect(orden.centroMedicoDestino, 'Hospital Regional');
-      expect(orden.unidadesIds, [1,2]);
+      expect(orden.unidadesIds, [1, 2]);
 
-      final ordenesGuardadas=await DespachoRepository.obtenerOrdenes();
+      final ordenesGuardadas = await DespachoRepository.obtenerOrdenes();
       expect(ordenesGuardadas.length, 1);
       expect(ordenesGuardadas.first.id, 1);
 
-      final unidadesActualizadas= await UnidadRepository.obtenerUnidades();
-      final u1=unidadesActualizadas.firstWhere((u)=>u['id']==1);
-      final u2=unidadesActualizadas.firstWhere((u)=>u['id']==2);
-      final u3=unidadesActualizadas.firstWhere((u)=>u['id']==3);
+      final unidadesActualizadas = await UnidadRepository.obtenerUnidades();
+      final u1 = unidadesActualizadas.firstWhere((u) => u['id'] == 1);
+      final u2 = unidadesActualizadas.firstWhere((u) => u['id'] == 2);
+      final u3 = unidadesActualizadas.firstWhere((u) => u['id'] == 3);
 
       expect(u1['estado'], 'Despachado');
       expect(u2['estado'], 'Despachado');
